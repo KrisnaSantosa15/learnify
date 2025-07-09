@@ -165,17 +165,6 @@ npm run lint     # Run ESLint
 - **Micro-interactions**: Hover and click feedback
 - **3D Elements**: Three.js skill tree visualizations
 
-## 📚 Documentation
-
-Comprehensive documentation is available in the `/guides` directory:
-
-- **[Main Documentation](./guides/DOCUMENTATION.md)** - Technical overview
-- **[Gamification Guide](./guides/GAMIFICATION_GUIDE.md)** - Achievement system details
-- **[User Guide](./guides/USER_GUIDE.md)** - End-user instructions
-- **[Implementation Guide](./guides/implementation-guide.md)** - Development guidelines
-- **[Content Strategy](./guides/content_strategy.md)** - Learning content approach
-- **[Responsive Design](./guides/responsive_design_specs.md)** - Mobile-first design specs
-
 ## 🌐 Browser Support
 
 - **Chrome** (latest)
