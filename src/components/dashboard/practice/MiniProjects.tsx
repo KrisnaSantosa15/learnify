@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Editor from "@monaco-editor/react";
 
 interface Project {
   id: number;
@@ -30,6 +31,13 @@ export default function MiniProjects() {
   const [userCode, setUserCode] = useState("");
   const [showHints, setShowHints] = useState(false);
   const [completedProjects, setCompletedProjects] = useState<number[]>([]);
+
+  // Load starter code when project or step changes
+  useEffect(() => {
+    if (selectedProject?.steps?.[currentStep]?.code) {
+      setUserCode(selectedProject.steps[currentStep].code);
+    }
+  }, [selectedProject, currentStep]);
 
   const projects: Project[] = [
     {
@@ -676,12 +684,39 @@ function generatePalette(count = 5) {
             </div>
           </div>
 
-          <textarea
-            value={userCode}
-            onChange={(e) => setUserCode(e.target.value)}
-            className="w-full h-96 p-4 bg-transparent text-gray-100 font-mono text-sm resize-none focus:outline-none"
-            placeholder="Write your code here..."
-          />
+          <div className="border border-gray-700 rounded-lg overflow-hidden">
+            <Editor
+              height="384px"
+              defaultLanguage="javascript"
+              value={userCode}
+              onChange={(value) => setUserCode(value || "")}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: "on",
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 2,
+                insertSpaces: true,
+                wordWrap: "on",
+                contextmenu: false,
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: {
+                  other: true,
+                  comments: true,
+                  strings: true,
+                },
+                parameterHints: {
+                  enabled: true,
+                },
+                autoIndent: "full",
+                formatOnType: true,
+                formatOnPaste: true,
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

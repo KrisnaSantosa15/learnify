@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Editor from "@monaco-editor/react";
 
 interface SpeedChallenge {
   id: number;
@@ -26,6 +27,13 @@ export default function SpeedCoding() {
   const [streak, setStreak] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [showHints, setShowHints] = useState(false);
+
+  // Load starter code when challenge is selected
+  useEffect(() => {
+    if (selectedChallenge?.code) {
+      setUserCode(selectedChallenge.code);
+    }
+  }, [selectedChallenge]);
 
   const challenges: SpeedChallenge[] = [
     {
@@ -413,13 +421,40 @@ export default function SpeedCoding() {
             </div>
           </div>
 
-          <textarea
-            value={userCode}
-            onChange={(e) => setUserCode(e.target.value)}
-            className="w-full h-96 p-4 bg-transparent text-gray-100 font-mono text-sm resize-none focus:outline-none"
-            placeholder="Write your solution here..."
-            disabled={isCompleted}
-          />
+          <div className="border border-gray-700 rounded-lg overflow-hidden">
+            <Editor
+              height="384px"
+              defaultLanguage="javascript"
+              value={userCode}
+              onChange={(value) => setUserCode(value || "")}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: "on",
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 2,
+                insertSpaces: true,
+                wordWrap: "on",
+                contextmenu: false,
+                readOnly: isCompleted,
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: {
+                  other: true,
+                  comments: true,
+                  strings: true,
+                },
+                parameterHints: {
+                  enabled: true,
+                },
+                autoIndent: "full",
+                formatOnType: true,
+                formatOnPaste: true,
+              }}
+            />
+          </div>
         </div>
 
         {/* Hints & Solution */}

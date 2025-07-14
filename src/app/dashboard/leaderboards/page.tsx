@@ -545,9 +545,11 @@ export default function LeaderboardsPage() {
                     <h3 className="text-xl font-bold text-white">
                       🏆 Global Rankings
                     </h3>
-                    <p className="text-gray-400">Traditional leaderboard view</p>
+                    <p className="text-gray-400">
+                      Traditional leaderboard view
+                    </p>
                   </div>
-                  
+
                   <div className="divide-y divide-white/5">
                     {filteredLeaderboard.map((user, index) => (
                       <div
@@ -563,11 +565,15 @@ export default function LeaderboardsPage() {
                           {/* Rank */}
                           <div className={`min-w-[60px] text-center`}>
                             {index < 3 ? (
-                              <div className={`text-2xl ${
-                                index === 0 ? "text-yellow-400" : 
-                                index === 1 ? "text-gray-300" : 
-                                "text-orange-400"
-                              }`}>
+                              <div
+                                className={`text-2xl ${
+                                  index === 0
+                                    ? "text-yellow-400"
+                                    : index === 1
+                                    ? "text-gray-300"
+                                    : "text-orange-400"
+                                }`}
+                              >
                                 {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
                               </div>
                             ) : (
@@ -595,7 +601,9 @@ export default function LeaderboardsPage() {
                               )}
                               <span className="text-sm">{user.country}</span>
                               {user.specialBadge && (
-                                <span className="text-lg">{user.specialBadge}</span>
+                                <span className="text-lg">
+                                  {user.specialBadge}
+                                </span>
                               )}
                             </div>
                             <div className="text-gray-400 text-sm">
@@ -613,13 +621,15 @@ export default function LeaderboardsPage() {
 
                           {/* Trend */}
                           <div className="text-right min-w-[80px]">
-                            <div className={`text-sm font-medium ${
-                              user.trend === "up"
-                                ? "text-green-400"
-                                : user.trend === "down"
-                                ? "text-red-400"
-                                : "text-gray-400"
-                            }`}>
+                            <div
+                              className={`text-sm font-medium ${
+                                user.trend === "up"
+                                  ? "text-green-400"
+                                  : user.trend === "down"
+                                  ? "text-red-400"
+                                  : "text-gray-400"
+                              }`}
+                            >
                               {user.trend === "up"
                                 ? "↗️"
                                 : user.trend === "down"
@@ -653,21 +663,25 @@ export default function LeaderboardsPage() {
                     <div className="text-2xl font-bold text-white mb-1">
                       {filteredLeaderboard.length.toLocaleString()}
                     </div>
-                    <div className="text-gray-400 text-sm">Total Competitors</div>
+                    <div className="text-gray-400 text-sm">
+                      Total Competitors
+                    </div>
                   </div>
-                  
+
                   <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-center">
                     <div className="text-3xl mb-2">⚡</div>
                     <div className="text-2xl font-bold text-yellow-400 mb-1">
-                      {Math.max(...filteredLeaderboard.map(u => u.score)).toLocaleString()}
+                      {Math.max(
+                        ...filteredLeaderboard.map((u) => u.score)
+                      ).toLocaleString()}
                     </div>
                     <div className="text-gray-400 text-sm">Highest Score</div>
                   </div>
-                  
+
                   <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-center">
                     <div className="text-3xl mb-2">🔥</div>
                     <div className="text-2xl font-bold text-orange-400 mb-1">
-                      {Math.max(...filteredLeaderboard.map(u => u.streak))}
+                      {Math.max(...filteredLeaderboard.map((u) => u.streak))}
                     </div>
                     <div className="text-gray-400 text-sm">Longest Streak</div>
                   </div>

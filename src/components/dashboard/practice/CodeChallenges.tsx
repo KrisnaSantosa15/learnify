@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Editor from "@monaco-editor/react";
 
 interface TestResult {
   id: number;
@@ -127,6 +128,13 @@ export default function CodeChallenges({
   const currentChallenges = getCurrentChallenges();
   const challenge = currentChallenges[currentChallenge];
 
+  // Load starter code when challenge changes
+  useEffect(() => {
+    if (challenge?.starterCode) {
+      setUserCode(challenge.starterCode);
+    }
+  }, [challenge]);
+
   const runTests = () => {
     if (!challenge) return;
 
@@ -231,12 +239,39 @@ export default function CodeChallenges({
             </div>
           </div>
 
-          <textarea
-            value={userCode}
-            onChange={(e) => setUserCode(e.target.value)}
-            className="w-full h-80 bg-gray-900 border border-gray-700 rounded-lg p-4 text-gray-300 font-mono text-sm resize-none focus:outline-none focus:border-[#28c7f9]"
-            placeholder="Write your solution here..."
-          />
+          <div className="border border-gray-700 rounded-lg overflow-hidden">
+            <Editor
+              height="320px"
+              defaultLanguage="javascript"
+              value={userCode}
+              onChange={(value) => setUserCode(value || "")}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: "on",
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 2,
+                insertSpaces: true,
+                wordWrap: "on",
+                contextmenu: false,
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: {
+                  other: true,
+                  comments: true,
+                  strings: true,
+                },
+                parameterHints: {
+                  enabled: true,
+                },
+                autoIndent: "full",
+                formatOnType: true,
+                formatOnPaste: true,
+              }}
+            />
+          </div>
         </div>
 
         {/* Test Results */}
