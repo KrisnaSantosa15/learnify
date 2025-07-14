@@ -11,16 +11,22 @@ interface Course {
 }
 
 interface CourseSelectorProps {
-  currentCourseId: string;
-  onCourseChange: (courseId: string) => void;
+  currentCourseId?: string;
+  onCourseChange?: (courseId: string) => void;
 }
 
 export default function CourseSelector({
-  currentCourseId,
+  currentCourseId = "js",
   onCourseChange,
 }: CourseSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleCourseChange = (courseId: string) => {
+    if (onCourseChange) {
+      onCourseChange(courseId);
+    }
+  };
 
   // Mock data for available courses
   const courses: Course[] = [
@@ -76,20 +82,29 @@ export default function CourseSelector({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Current course button */}
+      {/* Current course button - more prominent */}
       <button
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-200 hover:bg-dark-100 transition-colors"
+        className="w-full flex items-center justify-between gap-4 px-6 py-4 rounded-xl bg-dark-300/30 hover:bg-dark-300/50 border border-white/10 transition-all duration-200"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div
-          className="w-7 h-7 rounded-md flex items-center justify-center text-dark-300 font-bold text-sm"
-          style={{ backgroundColor: currentCourse.color }}
-        >
-          {currentCourse.icon}
+        <div className="flex items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg"
+            style={{ backgroundColor: currentCourse.color }}
+          >
+            {currentCourse.icon}
+          </div>
+          <div className="text-left">
+            <span className="text-white font-semibold text-lg block">
+              {currentCourse.name}
+            </span>
+            <span className="text-gray-400 text-sm">
+              {currentCourse.progress}% complete
+            </span>
+          </div>
         </div>
-        <span className="text-white">{currentCourse.name}</span>
         <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${
+          className={`w-5 h-5 text-gray-400 transition-transform ${
             isOpen ? "rotate-180" : ""
           }`}
           xmlns="http://www.w3.org/2000/svg"
@@ -104,13 +119,13 @@ export default function CourseSelector({
         </svg>
       </button>
 
-      {/* Dropdown panel */}
+      {/* Dropdown panel - cleaner */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-72 bg-dark-300/95 backdrop-blur-md rounded-xl border border-white/10 shadow-lg z-50 overflow-hidden">
-          <div className="p-3 border-b border-white/10">
-            <h3 className="text-white font-bold">Switch Course</h3>
+        <div className="absolute top-full left-0 mt-2 w-full bg-dark-300/95 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden">
+          <div className="p-4 border-b border-white/10">
+            <h3 className="text-white font-bold text-lg">Choose Your Course</h3>
             <p className="text-gray-400 text-sm">
-              Select a course to continue learning
+              Switch to a different programming language
             </p>
           </div>
 
@@ -122,7 +137,7 @@ export default function CourseSelector({
                   course.id === currentCourseId ? "bg-dark-200" : ""
                 }`}
                 onClick={() => {
-                  onCourseChange(course.id);
+                  handleCourseChange(course.id);
                   setIsOpen(false);
                 }}
               >

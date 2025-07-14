@@ -981,3 +981,31 @@ a {
 .max-w-7xl {
   max-width: 80rem;
 }
+
+/* Custom animations for sidebar */
+@keyframes ping-delayed {
+  75%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-delayed {
+  animation: ping-delayed 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation-delay: 500ms;
+}
+
+/* Smooth gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #28c7f9 0%, #8e5ff5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Sidebar active state glow */
+.sidebar-glow {
+  box-shadow: 0 0 20px rgba(40, 199, 249, 0.3), 0 0 40px rgba(142, 95, 245, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}

@@ -25,9 +25,9 @@ export default function Streaks() {
   ];
 
   return (
-    <div className="bg-dark-300/50 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden">
-      <div className="p-5">
-        {/* Streak header */}
+    <div className="bg-dark-300/30 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
+      <div className="p-4">
+        {/* Streak header - more compact */}
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center">
@@ -42,30 +42,30 @@ export default function Streaks() {
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             </div>
-            <p className="text-gray-400 text-sm">Current streak</p>
+            <p className="text-gray-400 text-xs">Current streak</p>
           </div>
 
           <div className="text-right">
             <div className="text-white font-bold">{longestStreak} days</div>
-            <p className="text-gray-400 text-sm">Longest streak</p>
+            <p className="text-gray-400 text-xs">Longest streak</p>
           </div>
         </div>
 
-        {/* Streak calendar */}
-        <div className="mb-5">
-          <div className="grid grid-cols-7 gap-2">
+        {/* Streak calendar - more compact */}
+        <div className="mb-4">
+          <div className="grid grid-cols-7 gap-1.5">
             {streakDays.map((day, i) => (
               <div key={i} className="flex flex-col items-center">
                 <div className="text-xs text-gray-400 mb-1">{day.day}</div>
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${
                     day.completed
                       ? "bg-gradient-to-r from-[#28c7f9] to-[#8e5ff5] text-white"
                       : "bg-dark-200 text-gray-500"
                   }`}
                 >
                   <svg
-                    className={`w-4 h-4 ${
+                    className={`w-3 h-3 ${
                       day.completed ? "opacity-100" : "opacity-0"
                     }`}
                     fill="none"
@@ -85,16 +85,16 @@ export default function Streaks() {
           </div>
         </div>
 
-        {/* Language progress */}
-        <div className="space-y-3">
+        {/* Language progress - simplified */}
+        <div className="space-y-2">
           <h3 className="text-sm font-medium text-white">Learning Progress</h3>
-          {languages.map((lang, i) => (
+          {languages.slice(0, 3).map((lang, i) => (
             <div key={i} className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-white">{lang.name}</span>
                 <span className="text-gray-400">{lang.progress}%</span>
               </div>
-              <div className="w-full h-1.5 bg-dark-200 rounded-full overflow-hidden">
+              <div className="w-full h-1 bg-dark-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full ${lang.color}`}
                   style={{ width: `${lang.progress}%` }}
@@ -102,57 +102,6 @@ export default function Streaks() {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Today's goals */}
-        <div className="mt-5 pt-4 border-t border-white/5">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium text-white">Today's Goals</h3>
-            <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded">
-              2/3 completed
-            </span>
-          </div>
-
-          <div className="mt-3 space-y-2">
-            {[
-              { task: "Complete JavaScript Arrays Quiz", completed: true },
-              { task: "Watch CSS Flexbox Tutorial", completed: true },
-              { task: "Code a Personal Portfolio", completed: false },
-            ].map((goal, i) => (
-              <div key={i} className="flex items-center">
-                <div
-                  className={`w-5 h-5 rounded-full mr-3 flex-shrink-0 ${
-                    goal.completed
-                      ? "bg-indigo-500 border-2 border-indigo-300"
-                      : "border-2 border-gray-500"
-                  }`}
-                >
-                  {goal.completed && (
-                    <svg
-                      className="w-full h-full text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <span
-                  className={`text-sm ${
-                    goal.completed ? "text-gray-300 line-through" : "text-white"
-                  }`}
-                >
-                  {goal.task}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
