@@ -1,7 +1,41 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import { useRouter } from "next/navigation";
+import AdvancedCodeEditor from "../AdvancedCodeEditor";
+
+// Custom hook to add dropdown styles
+const useDropdownStyles = () => {
+  useEffect(() => {
+    // Create style element for dropdown options
+    const styleElement = document.createElement("style");
+    styleElement.textContent = `
+      .custom-dropdown option {
+        background-color: #1f2937 !important;
+        color: white !important;
+        border: none !important;
+        padding: 8px 12px !important;
+      }
+      .custom-dropdown option:checked {
+        background-color: #3b82f6 !important;
+        color: white !important;
+      }
+      .custom-dropdown option:hover {
+        background-color: #374151 !important;
+        color: white !important;
+      }
+      .custom-dropdown:focus option:checked {
+        background-color: #3b82f6 !important;
+        color: white !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+};
 
 interface Project {
   id: number;
@@ -26,18 +60,118 @@ interface ProjectStep {
 }
 
 export default function MiniProjects() {
+  const router = useRouter();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [userCode, setUserCode] = useState("");
   const [showHints, setShowHints] = useState(false);
+  const [hintsUsed, setHintsUsed] = useState(0);
   const [completedProjects, setCompletedProjects] = useState<number[]>([]);
+  const [manualLanguage, setManualLanguage] = useState<string | null>(null);
+
+  // Apply custom dropdown styles
+  useDropdownStyles();
+
+  // Function to detect language based on code content
+  const detectLanguage = (code: string): string => {
+    if (!code) return "javascript";
+
+    // Check for HTML first (most specific)
+    if (
+      code.includes("<!DOCTYPE") ||
+      code.includes("<html") ||
+      code.includes("<head>") ||
+      code.includes("<body>") ||
+      (code.includes("<") && code.includes(">") && code.includes("</")) ||
+      code.match(/<[a-zA-Z][^>]*>/)
+    ) {
+      return "html";
+    }
+
+    // Check for CSS
+    if (
+      code.includes("{") &&
+      code.includes("}") &&
+      (code.includes("color:") ||
+        code.includes("font-") ||
+        code.includes("margin") ||
+        code.includes("padding") ||
+        code.includes("background") ||
+        code.includes("display:") ||
+        code.includes("position:") ||
+        code.match(/^[^{]*\s*{/m))
+    ) {
+      return "css";
+    }
+
+    // Check for Python (more specific checks)
+    if (
+      code.includes("def ") ||
+      code.includes("import ") ||
+      code.includes("from ") ||
+      code.includes("print(") ||
+      code.includes("if __name__") ||
+      code.includes("elif ") ||
+      code.includes("range(") ||
+      code.includes("len(") ||
+      code.match(/^\s*#.*$/m) // Python comments
+    ) {
+      return "python";
+    }
+
+    // Check for JavaScript (more specific)
+    if (
+      code.includes("function ") ||
+      code.includes("const ") ||
+      code.includes("let ") ||
+      code.includes("var ") ||
+      code.includes("document.") ||
+      code.includes("console.") ||
+      code.includes("window.") ||
+      code.includes("addEventListener") ||
+      code.includes("querySelector") ||
+      code.includes("=>") ||
+      code.includes("Math.") ||
+      code.includes("JSON.") ||
+      code.includes("Array.") ||
+      code.includes("Object.")
+    ) {
+      return "javascript";
+    }
+
+    // Default to JavaScript
+    return "javascript";
+  };
+
+  // Get current language based on the current step's code
+  const getCurrentLanguage = (): string => {
+    // Use manual override if set
+    if (manualLanguage) {
+      return manualLanguage;
+    }
+
+    if (selectedProject?.steps?.[currentStep]?.code) {
+      return detectLanguage(selectedProject.steps[currentStep].code);
+    }
+    return "javascript";
+  };
 
   // Load starter code when project or step changes
   useEffect(() => {
     if (selectedProject?.steps?.[currentStep]?.code) {
       setUserCode(selectedProject.steps[currentStep].code);
+      // Reset manual language override when step changes to allow auto-detection
+      setManualLanguage(null);
+      // Reset hints when step changes
+      setHintsUsed(0);
+      setShowHints(false);
     }
   }, [selectedProject, currentStep]);
+
+  // Update language when manual selection or code changes
+  useEffect(() => {
+    // Force re-render when language changes
+  }, [manualLanguage, userCode]);
 
   const projects: Project[] = [
     {
@@ -403,6 +537,88 @@ function generatePalette(count = 5) {
       finalCode: `<!-- Complete Color Palette Generator -->`,
       preview: "A professional color palette tool with export functionality",
     },
+    {
+      id: 4,
+      title: "Python Quote Generator",
+      description:
+        "Build a Python console application that generates random quotes.",
+      difficulty: "Beginner",
+      category: "Python Basics",
+      estimatedTime: "40 minutes",
+      skills: ["Python", "Lists", "Random", "Functions"],
+      steps: [
+        {
+          id: 1,
+          title: "Quote Data & Logic",
+          description: "Add Python to handle quote generation and display.",
+          code: `import random
+
+quotes = [
+    {"text": "The only way to do great work is to love what you do.", "author": "Steve Jobs"},
+    {"text": "Life is what happens to you while you're busy making other plans.", "author": "John Lennon"},
+    {"text": "The future belongs to those who believe in the beauty of their dreams.", "author": "Eleanor Roosevelt"},
+    {"text": "It is during our darkest moments that we must focus to see the light.", "author": "Aristotle"},
+    {"text": "Success is not final, failure is not fatal: it is the courage to continue that counts.", "author": "Winston Churchill"}
+]
+
+def get_random_quote():
+    # Get random quote from array
+    quote = random.choice(quotes)
+    return quote
+
+def display_quote(quote):
+    # Display the quote
+    print(f'"{quote["text"]}"')
+    print(f"- {quote['author']}")
+
+# Main program
+if __name__ == "__main__":
+    print("Welcome to the Random Quote Generator!")
+    print("-" * 40)
+    
+    while True:
+        input("Press Enter to get a new quote (or Ctrl+C to exit)...")
+        quote = get_random_quote()
+        display_quote(quote)
+        print()`,
+          hints: [
+            "Use import random to get random quotes",
+            "Create a list of dictionaries for quotes",
+            "Use random.choice() to select quotes",
+            "Print formatted quotes with author",
+          ],
+          isCompleted: false,
+        },
+      ],
+      finalCode: `# Complete Python Quote Generator
+import random
+
+quotes = [
+    {"text": "The only way to do great work is to love what you do.", "author": "Steve Jobs"},
+    {"text": "Life is what happens to you while you're busy making other plans.", "author": "John Lennon"},
+    {"text": "The future belongs to those who believe in the beauty of their dreams.", "author": "Eleanor Roosevelt"},
+    {"text": "It is during our darkest moments that we must focus to see the light.", "author": "Aristotle"},
+    {"text": "Success is not final, failure is not fatal: it is the courage to continue that counts.", "author": "Winston Churchill"}
+]
+
+def get_random_quote():
+    return random.choice(quotes)
+
+def display_quote(quote):
+    print(f'"{quote["text"]}"')
+    print(f"- {quote['author']}")
+
+if __name__ == "__main__":
+    print("Welcome to the Random Quote Generator!")
+    print("-" * 40)
+    
+    while True:
+        input("Press Enter to get a new quote (or Ctrl+C to exit)...")
+        quote = get_random_quote()
+        display_quote(quote)
+        print()`,
+      preview: "A Python console application with interactive quote generation",
+    },
   ];
 
   const startProject = (project: Project) => {
@@ -410,6 +626,17 @@ function generatePalette(count = 5) {
     setCurrentStep(0);
     setUserCode(project.steps[0].code);
     setShowHints(false);
+    setHintsUsed(0);
+  };
+
+  const showNextHint = () => {
+    if (!selectedProject || !selectedProject.steps[currentStep]) return;
+
+    const currentStepData = selectedProject.steps[currentStep];
+    if (hintsUsed < currentStepData.hints.length) {
+      setHintsUsed(hintsUsed + 1);
+      setShowHints(true);
+    }
   };
 
   const nextStep = () => {
@@ -426,13 +653,15 @@ function generatePalette(count = 5) {
     setCurrentStep(nextStepIndex);
     setUserCode(selectedProject.steps[nextStepIndex].code);
     setShowHints(false);
+    setHintsUsed(0);
   };
 
   const completeProject = () => {
     if (!selectedProject) return;
 
     setCompletedProjects([...completedProjects, selectedProject.id]);
-    setSelectedProject(null);
+    // Navigate back to projects page instead of setting to null
+    router.push("/dashboard/practice/projects");
     setCurrentStep(0);
     setUserCode("");
   };
@@ -559,7 +788,7 @@ function generatePalette(count = 5) {
   const isLastStep = currentStep === selectedProject.steps.length - 1;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Project Header */}
       <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -570,12 +799,20 @@ function generatePalette(count = 5) {
             <p className="text-gray-400">{selectedProject.description}</p>
           </div>
 
-          <button
-            onClick={() => setSelectedProject(null)}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm transition-colors"
-          >
-            Exit Project
-          </button>
+          <div className="flex items-center space-x-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-[#28c7f9]">
+                {currentStep + 1}/{selectedProject.steps.length}
+              </div>
+              <div className="text-xs text-gray-400">Step Progress</div>
+            </div>
+            <button
+              onClick={() => router.push("/dashboard/practice/projects")}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm transition-colors"
+            >
+              Exit Project
+            </button>
+          </div>
         </div>
 
         {/* Progress */}
@@ -603,122 +840,98 @@ function generatePalette(count = 5) {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Instructions */}
-        <div className="space-y-6">
-          <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-            <h4 className="text-lg font-bold text-white mb-4">
-              {currentStepData.title}
-            </h4>
-            <p className="text-gray-300 mb-6">{currentStepData.description}</p>
+      {/* Instructions and Hints - Above Code Editor */}
+      <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6 mb-6">
+        <h4 className="text-lg font-bold text-white mb-4">
+          {currentStepData.title}
+        </h4>
+        <p className="text-gray-300 mb-6">{currentStepData.description}</p>
 
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowHints(!showHints)}
-                className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors"
-              >
-                {showHints ? "Hide" : "Show"} Hints (
-                {currentStepData.hints.length})
-              </button>
+        <div className="flex items-center space-x-4 mb-6">
+          <button
+            onClick={showNextHint}
+            disabled={hintsUsed >= currentStepData.hints.length}
+            className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            💡 Get Hint ({hintsUsed}/{currentStepData.hints.length})
+          </button>
 
-              <button
-                onClick={isLastStep ? completeProject : nextStep}
-                className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-400 rounded-lg text-white font-bold hover:scale-105 transition-transform"
-              >
-                {isLastStep ? "Complete Project" : "Next Step"}
-              </button>
-            </div>
-          </div>
+          {hintsUsed > 0 && (
+            <button
+              onClick={() => setShowHints(!showHints)}
+              className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors"
+            >
+              {showHints ? "Hide" : "Show"} Hints ({hintsUsed})
+            </button>
+          )}
 
-          {/* Hints */}
-          {showHints && (
-            <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-              <h5 className="text-lg font-bold text-white mb-4 flex items-center">
-                <span className="text-yellow-400 mr-2">💡</span>
-                Hints
+          <button
+            onClick={isLastStep ? completeProject : nextStep}
+            className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-400 rounded-lg text-white font-bold hover:scale-105 transition-transform"
+          >
+            {isLastStep ? "Complete Project" : "Next Step"}
+          </button>
+        </div>
+
+        {/* Hints */}
+        {showHints && hintsUsed > 0 && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <span className="text-yellow-400 text-xl">💡</span>
+              <h5 className="text-lg font-bold text-yellow-400">
+                Available Hints ({hintsUsed}/{currentStepData.hints.length})
               </h5>
-              <div className="space-y-3">
-                {currentStepData.hints.map((hint, index) => (
-                  <div
-                    key={index}
-                    className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20"
-                  >
-                    <div className="text-sm font-medium text-yellow-400 mb-1">
-                      Tip {index + 1}:
-                    </div>
-                    <div className="text-gray-300">{hint}</div>
+            </div>
+            <div className="space-y-3">
+              {currentStepData.hints.slice(0, hintsUsed).map((hint, index) => (
+                <div
+                  key={index}
+                  className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20"
+                >
+                  <div className="text-sm font-medium text-yellow-400 mb-1">
+                    Tip {index + 1}:
                   </div>
-                ))}
-              </div>
+                  <div className="text-gray-300">{hint}</div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Final Preview */}
-          {isLastStep && (
-            <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-              <h5 className="text-lg font-bold text-white mb-4 flex items-center">
-                <span className="text-green-400 mr-2">🎯</span>
-                Final Result
+        {/* Final Preview */}
+        {isLastStep && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <span className="text-green-400 text-xl">🎯</span>
+              <h5 className="text-lg font-bold text-green-400">
+                Final Result Preview
               </h5>
-              <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                <div className="text-gray-300">{selectedProject.preview}</div>
-              </div>
             </div>
-          )}
-        </div>
-
-        {/* Code Editor */}
-        <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <h4 className="text-lg font-bold text-white">Code Editor</h4>
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-400">
-                Step {currentStep + 1}
-              </span>
-              <button
-                onClick={() => setUserCode(currentStepData.code)}
-                className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white text-sm transition-colors"
-              >
-                Reset
-              </button>
+            <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+              <div className="text-gray-300">{selectedProject.preview}</div>
             </div>
           </div>
-
-          <div className="border border-gray-700 rounded-lg overflow-hidden">
-            <Editor
-              height="384px"
-              defaultLanguage="javascript"
-              value={userCode}
-              onChange={(value) => setUserCode(value || "")}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: "on",
-                roundedSelection: false,
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                tabSize: 2,
-                insertSpaces: true,
-                wordWrap: "on",
-                contextmenu: false,
-                suggestOnTriggerCharacters: true,
-                quickSuggestions: {
-                  other: true,
-                  comments: true,
-                  strings: true,
-                },
-                parameterHints: {
-                  enabled: true,
-                },
-                autoIndent: "full",
-                formatOnType: true,
-                formatOnPaste: true,
-              }}
-            />
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* Code Editor - Full Width */}
+      <AdvancedCodeEditor
+        code={userCode}
+        onChange={setUserCode}
+        language={getCurrentLanguage()}
+        height="700px"
+        title={selectedProject.title}
+        onLanguageChange={(lang) =>
+          setManualLanguage(lang === "auto" ? null : lang)
+        }
+        availableLanguages={["javascript", "html", "css", "python"]}
+        onReset={() => setUserCode(currentStepData.code)}
+        onHint={
+          hintsUsed < currentStepData.hints.length ? showNextHint : undefined
+        }
+        hints={currentStepData.hints}
+        hintsUsed={hintsUsed}
+      />
     </div>
   );
 }

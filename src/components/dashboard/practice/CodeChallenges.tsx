@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import AdvancedCodeEditor from "../AdvancedCodeEditor";
 
 interface TestResult {
   id: number;
@@ -218,60 +218,16 @@ export default function CodeChallenges({
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Code Editor */}
-        <div className="bg-dark-200/60 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-bold text-white">Code Editor</h4>
-            <div className="flex space-x-2">
-              <button
-                onClick={runTests}
-                disabled={isRunning}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg text-white font-medium hover:scale-105 transition-transform disabled:opacity-50"
-              >
-                {isRunning ? "Running..." : "Run Tests"}
-              </button>
-              <button
-                onClick={nextChallenge}
-                disabled={currentChallenge >= currentChallenges.length - 1}
-                className="px-4 py-2 bg-gradient-to-r from-[#28c7f9] to-[#8e5ff5] rounded-lg text-white font-medium hover:scale-105 transition-transform disabled:opacity-50"
-              >
-                Next Challenge
-              </button>
-            </div>
-          </div>
-
-          <div className="border border-gray-700 rounded-lg overflow-hidden">
-            <Editor
-              height="320px"
-              defaultLanguage="javascript"
-              value={userCode}
-              onChange={(value) => setUserCode(value || "")}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: "on",
-                roundedSelection: false,
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                tabSize: 2,
-                insertSpaces: true,
-                wordWrap: "on",
-                contextmenu: false,
-                suggestOnTriggerCharacters: true,
-                quickSuggestions: {
-                  other: true,
-                  comments: true,
-                  strings: true,
-                },
-                parameterHints: {
-                  enabled: true,
-                },
-                autoIndent: "full",
-                formatOnType: true,
-                formatOnPaste: true,
-              }}
-            />
-          </div>
+        <div>
+          <AdvancedCodeEditor
+            code={userCode}
+            onChange={setUserCode}
+            language="javascript"
+            height="500px"
+            title={challenge.title}
+            onSubmit={runTests}
+            readOnly={isRunning}
+          />
         </div>
 
         {/* Test Results */}
@@ -347,6 +303,21 @@ export default function CodeChallenges({
           ))}
         </div>
       </div>
+
+      {/* Next Challenge Button */}
+      {testResults.length > 0 && testResults.every((r) => r.passed) && (
+        <div className="text-center">
+          <button
+            onClick={nextChallenge}
+            disabled={currentChallenge >= currentChallenges.length - 1}
+            className="px-8 py-3 bg-gradient-to-r from-[#28c7f9] to-[#8e5ff5] rounded-xl text-white font-bold hover:scale-105 transition-transform disabled:opacity-50"
+          >
+            {currentChallenge >= currentChallenges.length - 1
+              ? "All Challenges Complete!"
+              : "Next Challenge →"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

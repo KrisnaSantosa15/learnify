@@ -413,15 +413,18 @@ __BLANK__ user = {
               </div>
             </div>
 
-            {/* Show correct answer in code */}
-            <div className="bg-gray-900/60 rounded-xl p-4 border border-green-500/30">
+            {/* Enhanced Solution Display */}
+            <div className="bg-gradient-to-br from-green-500/10 to-blue-500/10 backdrop-blur-sm border border-green-400/30 rounded-xl p-4 relative overflow-hidden">
               <div className="flex items-center justify-between mb-3">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-300 border border-green-500/30">
-                  ✅ Correct Answer
-                </span>
+                <div className="flex items-center space-x-3">
+                  <span className="text-lg">🎯</span>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-500/20 text-green-300 border border-green-500/30">
+                    ✅ Correct Solution
+                  </span>
+                </div>
                 <button
                   onClick={handleCopyCode}
-                  className="flex items-center space-x-1 px-3 py-1 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white text-xs rounded-lg transition-all duration-200"
+                  className="flex items-center space-x-2 px-3 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-400/20"
                   title="Copy complete code"
                 >
                   <svg
@@ -440,46 +443,63 @@ __BLANK__ user = {
                   <span>Copy</span>
                 </button>
               </div>
-              <div className="font-mono text-sm">
-                {currentQuiz.codeBlocks.map((block, index) => (
-                  <div key={index}>
-                    <pre className="leading-relaxed text-gray-300">
-                      <code>
-                        {block.content.includes("__BLANK__") ? (
-                          block.content
-                            .split("__BLANK__")
-                            .map((part, partIndex, parts) => (
-                              <span key={partIndex}>
-                                <span
-                                  dangerouslySetInnerHTML={{
-                                    __html: highlightCode(part, block.language),
-                                  }}
-                                />
-                                {partIndex < parts.length - 1 && (
-                                  <span className="bg-green-500/30 text-green-200 px-2 py-1 rounded font-bold">
-                                    {
-                                      currentQuiz.answers[
-                                        currentQuiz.correctAnswer
-                                      ]
-                                    }
-                                  </span>
-                                )}
-                              </span>
-                            ))
-                        ) : (
-                          <span
-                            dangerouslySetInnerHTML={{
-                              __html: highlightCode(
-                                block.content,
-                                block.language
-                              ),
-                            }}
-                          />
-                        )}
-                      </code>
-                    </pre>
+              <div className="bg-dark-300/80 border border-green-400/20 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 bg-dark-200/50 border-b border-green-400/10">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                    </div>
+                    <span className="text-gray-400 text-xs font-mono">
+                      solution.js
+                    </span>
                   </div>
-                ))}
+                </div>
+                <div className="p-4 font-mono text-sm">
+                  {currentQuiz.codeBlocks.map((block, index) => (
+                    <div key={index}>
+                      <pre className="leading-relaxed text-gray-300">
+                        <code>
+                          {block.content.includes("__BLANK__") ? (
+                            block.content
+                              .split("__BLANK__")
+                              .map((part, partIndex, parts) => (
+                                <span key={partIndex}>
+                                  <span
+                                    dangerouslySetInnerHTML={{
+                                      __html: highlightCode(
+                                        part,
+                                        block.language
+                                      ),
+                                    }}
+                                  />
+                                  {partIndex < parts.length - 1 && (
+                                    <span className="bg-green-500/30 text-green-200 px-2 py-1 rounded font-bold">
+                                      {
+                                        currentQuiz.answers[
+                                          currentQuiz.correctAnswer
+                                        ]
+                                      }
+                                    </span>
+                                  )}
+                                </span>
+                              ))
+                          ) : (
+                            <span
+                              dangerouslySetInnerHTML={{
+                                __html: highlightCode(
+                                  block.content,
+                                  block.language
+                                ),
+                              }}
+                            />
+                          )}
+                        </code>
+                      </pre>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
