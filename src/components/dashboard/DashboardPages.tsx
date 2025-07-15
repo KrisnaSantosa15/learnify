@@ -3,7 +3,8 @@
 import React from "react";
 import CourseProgress from "./CourseProgress";
 import CourseSelector from "./CourseSelector";
-import ProgrammingQuiz from "./ProgrammingQuiz";
+import QuizSection from "./QuizSection";
+import SpeedCoding from "./practice/SpeedCoding";
 import Streaks from "./Streaks";
 import RecentActivities from "./RecentActivities";
 import NeuralEnhancer from "./NeuralEnhancer";
@@ -38,7 +39,7 @@ export default function DashboardPages({
         {/* Programming Quiz */}
         <div>
           <h2 className="text-xl font-bold mb-4">Daily Programming Quiz</h2>
-          <ProgrammingQuiz />
+          <QuizSection />
         </div>
 
         {/* Recent activity */}
@@ -90,7 +91,7 @@ export default function DashboardPages({
       <div className="grid gap-6">
         <div className="bg-dark-300/50 backdrop-blur-sm border border-white/5 rounded-xl p-6">
           <h3 className="text-xl font-bold mb-4">Coding Challenges</h3>
-          <ProgrammingQuiz />
+          <SpeedCoding />
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">

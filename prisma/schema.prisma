@@ -1,0 +1,397 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and profile management
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  username        String?   @unique
+  name            String?
+  avatar          String?
+  bio             String?
+  level           Int       @default(1)
+  xp              Int       @default(0)
+  hearts          Int       @default(5)
+  lastHeartRefill DateTime?
+  streak          Int       @default(0)
+  lastActive      DateTime  @default(now())
+  isVerified      Boolean   @default(false)
+  plan            Plan      @default(FREE)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  submissions     CodeSubmission[]
+  achievements    UserAchievement[]
+  progress        CourseProgress[]
+  quizAttempts    QuizAttempt[]
+  leaderboard     LeaderboardEntry[]
+  comments        Comment[]
+  sessions        Session[]
+
+  @@map("users")
+}
+
+// Session model for NextAuth.js
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Enum for user plans
+enum Plan {
+  FREE
+  PRO
+  PREMIUM
+}
+
+// Course management
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  difficulty  Difficulty
+  technology  String   // JavaScript, Python, React, etc.
+  thumbnail   String?
+  isPublished Boolean  @default(false)
+  order       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  modules    Module[]
+  progress   CourseProgress[]
+  challenges Challenge[]
+
+  @@map("courses")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  content     Json     // Rich content structure
+  order       Int
+  courseId    String
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course   Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress ModuleProgress[]
+  lessons  Lesson[]
+
+  @@map("modules")
+}
+
+model Lesson {
+  id          String     @id @default(cuid())
+  title       String
+  content     Json       // Rich content with code examples
+  type        LessonType
+  order       Int
+  moduleId    String
+  xpReward    Int        @default(10)
+  isCompleted Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  module   Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+
+  @@map("lessons")
+}
+
+enum LessonType {
+  THEORY
+  PRACTICE
+  QUIZ
+  PROJECT
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+// Progress tracking
+model CourseProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  courseId      String
+  isCompleted   Boolean  @default(false)
+  completedAt   DateTime?
+  progress      Float    @default(0) // 0-100 percentage
+  timeSpent     Int      @default(0) // in minutes
+  lastAccessed  DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course  Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  modules ModuleProgress[]
+
+  @@unique([userId, courseId])
+  @@map("course_progress")
+}
+
+model ModuleProgress {
+  id              String   @id @default(cuid())
+  courseProgressId String
+  moduleId        String
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  timeSpent       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  courseProgress CourseProgress   @relation(fields: [courseProgressId], references: [id], onDelete: Cascade)
+  module         Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lessons        LessonProgress[]
+
+  @@unique([courseProgressId, moduleId])
+  @@map("module_progress")
+}
+
+model LessonProgress {
+  id               String   @id @default(cuid())
+  moduleProgressId String
+  lessonId         String
+  isCompleted      Boolean  @default(false)
+  completedAt      DateTime?
+  timeSpent        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  moduleProgress ModuleProgress @relation(fields: [moduleProgressId], references: [id], onDelete: Cascade)
+  lesson         Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleProgressId, lessonId])
+  @@map("lesson_progress")
+}
+
+// Coding challenges and practice
+model Challenge {
+  id          String          @id @default(cuid())
+  title       String
+  description String
+  difficulty  Difficulty
+  technology  String
+  type        ChallengeType
+  prompt      String          // Challenge instructions
+  starterCode String?         // Initial code template
+  solution    String?         // Expected solution
+  testCases   Json            // Test cases for validation
+  hints       String[]
+  xpReward    Int             @default(50)
+  timeLimit   Int?            // in minutes
+  courseId    String?
+  isPublished Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  course      Course?           @relation(fields: [courseId], references: [id])
+  submissions CodeSubmission[]
+
+  @@map("challenges")
+}
+
+enum ChallengeType {
+  ALGORITHM
+  PROJECT
+  SPEED_CODING
+  DEBUG
+  QUIZ
+}
+
+model CodeSubmission {
+  id          String           @id @default(cuid())
+  userId      String
+  challengeId String
+  code        String
+  language    String
+  status      SubmissionStatus
+  score       Int?             // 0-100
+  timeSpent   Int              // in seconds
+  hints       Int              @default(0) // number of hints used
+  passedTests Int              @default(0)
+  totalTests  Int              @default(0)
+  feedback    String?
+  createdAt   DateTime         @default(now())
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("code_submissions")
+}
+
+enum SubmissionStatus {
+  PENDING
+  PASSED
+  FAILED
+  TIMEOUT
+  ERROR
+}
+
+// Quiz system
+model Quiz {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  difficulty  Difficulty
+  category    String
+  questions   QuizQuestion[]
+  timeLimit   Int?          // in minutes
+  xpReward    Int           @default(30)
+  isPublished Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  attempts QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String   @id @default(cuid())
+  quizId        String
+  question      String
+  options       String[] // Array of options
+  correctAnswer Int      // Index of correct option
+  explanation   String?
+  order         Int
+  points        Int      @default(10)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  quizId      String
+  score       Int      // Total points earned
+  maxScore    Int      // Maximum possible points
+  timeSpent   Int      // in seconds
+  answers     Json     // User's answers
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_attempts")
+}
+
+// Gamification system
+model Achievement {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String
+  rarity      Rarity
+  category    String
+  criteria    Json     // Conditions to unlock achievement
+  xpReward    Int      @default(100)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users UserAchievement[]
+
+  @@map("achievements")
+}
+
+enum Rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model LeaderboardEntry {
+  id        String          @id @default(cuid())
+  userId    String
+  type      LeaderboardType
+  value     Int             // XP, streak, etc.
+  rank      Int
+  period    String          // weekly, monthly, all-time
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, period])
+  @@map("leaderboard_entries")
+}
+
+enum LeaderboardType {
+  XP
+  STREAK
+  CHALLENGES_COMPLETED
+  HOURS_CODED
+}
+
+// Community features
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  userId    String
+  target    String   // challenge_id, course_id, etc.
+  targetType String  // challenge, course, etc.
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}

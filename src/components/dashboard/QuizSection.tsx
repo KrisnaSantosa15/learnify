@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface QuizQuestion {
   id: number;
@@ -13,7 +14,140 @@ interface QuizQuestion {
   explanation?: string;
 }
 
+// Database types
+interface DatabaseQuiz {
+  id: string;
+  title: string;
+  description?: string;
+  difficulty: string;
+  category: string;
+  questions: DatabaseQuizQuestion[];
+  timeLimit?: number;
+  xpReward: number;
+  isPublished: boolean;
+}
+
+interface DatabaseQuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation?: string;
+  order: number;
+  points: number;
+}
+
+// Fallback quiz data when database is empty
+const fallbackQuizzes: QuizQuestion[] = [
+  {
+    id: 1,
+    question: "What is the output of console.log(typeof null) in JavaScript?",
+    options: ["null", "undefined", "object", "boolean"],
+    correctAnswer: 2,
+    category: "JavaScript",
+    difficulty: "Medium",
+    xpReward: 20,
+    explanation:
+      "This is a known quirk in JavaScript. typeof null returns 'object' due to legacy reasons.",
+  },
+  {
+    id: 2,
+    question:
+      "Which of the following is NOT a primitive data type in JavaScript?",
+    options: ["string", "number", "array", "boolean"],
+    correctAnswer: 2,
+    category: "JavaScript",
+    difficulty: "Easy",
+    xpReward: 15,
+    explanation:
+      "Array is an object type, not a primitive. The primitive types are string, number, boolean, null, undefined, symbol, and bigint.",
+  },
+  {
+    id: 3,
+    question: "What does the 'use strict' directive do in JavaScript?",
+    options: [
+      "Makes code run faster",
+      "Enables strict mode which catches common errors",
+      "Compresses the code",
+      "Enables ES6 features",
+    ],
+    correctAnswer: 1,
+    category: "JavaScript",
+    difficulty: "Medium",
+    xpReward: 25,
+    explanation:
+      "'use strict' enables strict mode, which helps catch common coding errors and prevents certain unsafe actions.",
+  },
+  {
+    id: 4,
+    question:
+      "Which method is used to add an element to the end of an array in JavaScript?",
+    options: ["append()", "push()", "add()", "insert()"],
+    correctAnswer: 1,
+    category: "JavaScript",
+    difficulty: "Easy",
+    xpReward: 10,
+    explanation:
+      "The push() method adds one or more elements to the end of an array and returns the new length.",
+  },
+  {
+    id: 5,
+    question: "What is the difference between '==' and '===' in JavaScript?",
+    options: [
+      "No difference",
+      "=== is faster than ==",
+      "== compares values, === compares values and types",
+      "=== is used for strings only",
+    ],
+    correctAnswer: 2,
+    category: "JavaScript",
+    difficulty: "Medium",
+    xpReward: 20,
+    explanation:
+      "== performs type coercion and compares values, while === performs strict equality comparison without type coercion.",
+  },
+  {
+    id: 6,
+    question: "What does CSS stand for?",
+    options: [
+      "Computer Style Sheets",
+      "Creative Style Sheets",
+      "Cascading Style Sheets",
+      "Colorful Style Sheets",
+    ],
+    correctAnswer: 2,
+    category: "CSS",
+    difficulty: "Easy",
+    xpReward: 10,
+    explanation:
+      "CSS stands for Cascading Style Sheets, which describes how HTML elements are displayed.",
+  },
+  {
+    id: 7,
+    question: "Which CSS property is used to change the text color?",
+    options: ["text-color", "color", "font-color", "text-style"],
+    correctAnswer: 1,
+    category: "CSS",
+    difficulty: "Easy",
+    xpReward: 10,
+    explanation:
+      "The 'color' property is used to set the color of text in CSS.",
+  },
+  {
+    id: 8,
+    question: "What is the default display value for a div element?",
+    options: ["inline", "block", "inline-block", "flex"],
+    correctAnswer: 1,
+    category: "CSS",
+    difficulty: "Easy",
+    xpReward: 15,
+    explanation:
+      "The default display value for a div element is 'block', which means it takes up the full width available.",
+  },
+];
+
 export default function QuizSection() {
+  const { user } = useAuth();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [currentQuiz, setCurrentQuiz] = useState(0);
@@ -23,6 +157,8 @@ export default function QuizSection() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizCategories, setQuizCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Hearts system
   const maxHearts = 5;
@@ -31,6 +167,97 @@ export default function QuizSection() {
   const [showOutOfHeartsModal, setShowOutOfHeartsModal] = useState(false);
   const [nextHeartRefill, setNextHeartRefill] = useState<Date | null>(null);
   const [timeToNextHeart, setTimeToNextHeart] = useState("");
+
+  // Database state
+  const [allQuizzes, setAllQuizzes] = useState<QuizQuestion[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizQuestion[]>([]);
+
+  // Load user's hearts from localStorage or user profile
+  useEffect(() => {
+    const savedHearts = localStorage.getItem("userHearts");
+    if (savedHearts) {
+      setHearts(parseInt(savedHearts));
+    }
+  }, []);
+  // Load quizzes from database
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/quizzes");
+        if (!response.ok) {
+          throw new Error("Failed to fetch quizzes");
+        }
+        const data = await response.json();
+
+        // Handle API response format
+        const quizzesData = data.quizzes || [];
+
+        // If no quizzes in database, use fallback
+        if (quizzesData.length === 0) {
+          console.warn("No quizzes found in database, using fallback quizzes");
+          setAllQuizzes(fallbackQuizzes);
+          setQuizzes(fallbackQuizzes);
+
+          // Set categories for fallback
+          const categories = [
+            "All",
+            ...new Set(
+              fallbackQuizzes.map((quiz: QuizQuestion) => quiz.category)
+            ),
+          ] as string[];
+          setQuizCategories(categories);
+        } else {
+          // Use database quizzes - need to transform structure
+          const transformedQuizzes = quizzesData.flatMap((quiz: DatabaseQuiz) =>
+            quiz.questions.map(
+              (question: DatabaseQuizQuestion, index: number) => ({
+                id: parseInt(question.id.replace("quiz_", "")) || index,
+                question: question.question,
+                options: question.options,
+                correctAnswer: question.correctAnswer,
+                category: quiz.category,
+                difficulty: quiz.difficulty as "Easy" | "Medium" | "Hard",
+                xpReward: question.points || 10,
+                explanation: question.explanation,
+              })
+            )
+          );
+
+          setAllQuizzes(transformedQuizzes);
+          setQuizzes(transformedQuizzes);
+
+          // Set categories for database quizzes
+          const categories = [
+            "All",
+            ...new Set(
+              transformedQuizzes.map((quiz: QuizQuestion) => quiz.category)
+            ),
+          ] as string[];
+          setQuizCategories(categories);
+        }
+      } catch (err) {
+        console.error("Error fetching quizzes:", err);
+        setError(err instanceof Error ? err.message : "Failed to load quizzes");
+
+        // Use fallback quizzes on error
+        setAllQuizzes(fallbackQuizzes);
+        setQuizzes(fallbackQuizzes);
+
+        const categories = [
+          "All",
+          ...new Set(
+            fallbackQuizzes.map((quiz: QuizQuestion) => quiz.category)
+          ),
+        ] as string[];
+        setQuizCategories(categories);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuizzes();
+  }, []);
 
   // Track when the next heart will be refilled
   useEffect(() => {
@@ -72,121 +299,7 @@ export default function QuizSection() {
     return () => clearInterval(timer);
   }, [nextHeartRefill, maxHearts]);
 
-  const allQuizzes: QuizQuestion[] = useMemo(
-    () => [
-      {
-        id: 1,
-        question:
-          "Which method adds an element to the end of an array in JavaScript?",
-        options: [
-          "array.push()",
-          "array.pop()",
-          "array.unshift()",
-          "array.shift()",
-        ],
-        correctAnswer: 0,
-        category: "JavaScript",
-        difficulty: "Easy",
-        xpReward: 15,
-        explanation:
-          "The push() method adds one or more elements to the end of an array and returns the new length of the array.",
-      },
-      {
-        id: 2,
-        question: "What does CSS stand for?",
-        options: [
-          "Computer Style Sheets",
-          "Creative Style Sheets",
-          "Cascading Style Sheets",
-          "Colorful Style Sheets",
-        ],
-        correctAnswer: 2,
-        category: "CSS",
-        difficulty: "Easy",
-        xpReward: 15,
-        explanation:
-          "CSS stands for Cascading Style Sheets, which is a style sheet language used for describing the presentation of a document written in HTML or XML.",
-      },
-      {
-        id: 3,
-        question:
-          "Which of the following is NOT a JavaScript framework or library?",
-        options: ["React", "Angular", "Django", "Vue"],
-        correctAnswer: 2,
-        category: "Web Development",
-        difficulty: "Medium",
-        xpReward: 20,
-        explanation:
-          "Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design. It's not a JavaScript framework.",
-      },
-      {
-        id: 4,
-        question: "Which HTTP status code indicates 'Not Found'?",
-        options: ["200", "404", "500", "302"],
-        correctAnswer: 1,
-        category: "Web Development",
-        difficulty: "Easy",
-        xpReward: 15,
-      },
-      {
-        id: 5,
-        question: "Which of these is NOT a valid CSS position property?",
-        options: ["static", "relative", "fixed", "floating"],
-        correctAnswer: 3,
-        category: "CSS",
-        difficulty: "Medium",
-        xpReward: 20,
-        explanation:
-          "The valid CSS position properties are static, relative, absolute, fixed, and sticky. There is no 'floating' position property.",
-      },
-      {
-        id: 6,
-        question:
-          "Which JavaScript method is used to remove the last element from an array?",
-        options: ["pop()", "push()", "shift()", "unshift()"],
-        correctAnswer: 0,
-        category: "JavaScript",
-        difficulty: "Easy",
-        xpReward: 15,
-      },
-      {
-        id: 7,
-        question: "What does the 'Box Model' in CSS describe?",
-        options: [
-          "How elements are displayed on a page",
-          "How margins and padding interact",
-          "The content, padding, border, and margin areas",
-          "How flexbox works",
-        ],
-        correctAnswer: 2,
-        category: "CSS",
-        difficulty: "Medium",
-        xpReward: 20,
-      },
-      {
-        id: 8,
-        question:
-          "Which is the correct JavaScript syntax to declare a constant?",
-        options: ["constant x = 5", "var x = 5", "let x = 5", "const x = 5"],
-        correctAnswer: 3,
-        category: "JavaScript",
-        difficulty: "Easy",
-        xpReward: 15,
-      },
-    ],
-    []
-  );
-
-  const [quizzes, setQuizzes] = useState<QuizQuestion[]>(allQuizzes);
-
-  useEffect(() => {
-    const categories = [
-      "All",
-      ...new Set(allQuizzes.map((quiz) => quiz.category)),
-    ];
-    setQuizCategories(categories);
-  }, [allQuizzes]);
-
+  // Filter quizzes based on selected category
   useEffect(() => {
     if (selectedCategory === "All") {
       setQuizzes(allQuizzes);
@@ -220,10 +333,12 @@ export default function QuizSection() {
     }
   };
 
-  const handleSubmit = () => {
-    if (selectedOption !== null && !isSubmitted) {
+  const handleSubmit = async () => {
+    if (selectedOption !== null && !isSubmitted && user) {
       setIsSubmitted(true);
-      if (selectedOption === currentQuestion.correctAnswer) {
+      const isCorrect = selectedOption === currentQuestion.correctAnswer;
+
+      if (isCorrect) {
         setCorrectStreak((prev) => prev + 1);
         const streakBonus = Math.min(correctStreak, 5) * 2;
         const earnedXp = currentQuestion.xpReward + streakBonus;
@@ -234,11 +349,37 @@ export default function QuizSection() {
         setTimeout(() => setHeartAnimation(false), 500);
         setCorrectStreak(0);
         setHearts((prev) => Math.max(0, prev - 1));
+        localStorage.setItem("userHearts", Math.max(0, hearts - 1).toString());
 
         // Show modal if out of hearts
         if (hearts <= 1) {
           setShowOutOfHeartsModal(true);
         }
+      }
+
+      // Submit quiz attempt to database
+      try {
+        const response = await fetch("/api/quiz-attempts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            quizId: currentQuestion.id,
+            selectedAnswer: selectedOption,
+            isCorrect,
+            xpEarned: isCorrect
+              ? currentQuestion.xpReward + Math.min(correctStreak, 5) * 2
+              : 0,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to submit quiz attempt");
+        }
+      } catch (error) {
+        console.error("Error submitting quiz attempt:", error);
       }
     }
   };
@@ -257,11 +398,13 @@ export default function QuizSection() {
 
   const handleReset = () => {
     const shuffled = [...allQuizzes].sort(() => 0.5 - Math.random());
-    setQuizzes(shuffled.slice(0, Math.min(5, shuffled.length)));
+    setQuizzes(shuffled.slice(0, Math.min(8, shuffled.length)));
     setCurrentQuiz(0);
     setSelectedOption(null);
     setIsSubmitted(false);
     setQuizCompleted(false);
+    setCorrectStreak(0);
+    setTotalXpEarned(0);
   };
 
   // Function to handle getting more hearts (could be connected to watch ads, etc.)
@@ -283,6 +426,92 @@ export default function QuizSection() {
         return "text-[#58c896]";
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-dark-300/30 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden">
+        <div className="p-5 border-b border-white/5">
+          <h2 className="text-xl font-bold text-white flex items-center">
+            <svg
+              className="w-5 h-5 mr-2 text-[#8e5ff5]"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+            </svg>
+            Daily Quiz Challenge
+          </h2>
+        </div>
+        <div className="p-5 flex justify-center items-center py-12">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8e5ff5] mb-4"></div>
+            <p className="text-gray-400">Loading quizzes...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-dark-300/30 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden">
+        <div className="p-5 border-b border-white/5">
+          <h2 className="text-xl font-bold text-white flex items-center">
+            <svg
+              className="w-5 h-5 mr-2 text-[#8e5ff5]"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+            </svg>
+            Daily Quiz Challenge
+          </h2>
+        </div>
+        <div className="p-5 flex justify-center items-center py-12">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-full bg-[#ff5e7d]/20 flex items-center justify-center mb-4">
+              <svg
+                className="w-6 h-6 text-[#ff5e7d]"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <p className="text-white font-medium mb-2">
+              Failed to load quizzes
+            </p>
+            <p className="text-gray-400 text-sm mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-[#8e5ff5] hover:bg-[#8e5ff5]/80 text-white rounded-lg text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Out of Hearts Modal
   if (showOutOfHeartsModal) {

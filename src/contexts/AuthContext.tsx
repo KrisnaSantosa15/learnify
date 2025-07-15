@@ -5,18 +5,20 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  avatar?: string;
+  username: string | null;
+  name: string | null;
+  avatar?: string | null;
   level: number;
   xp: number;
   streak: number;
   hearts: number;
-  maxHearts: number;
-  achievements: string[];
-  completedCourses: string[];
-  currentCourse: string;
-  joinedAt: string;
+  lastHeartRefill: Date | null;
+  plan: string;
+  _count?: {
+    submissions: number;
+    achievements: number;
+    progress: number;
+  };
 }
 
 interface AuthContextType {
@@ -52,66 +54,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check for existing authentication on mount
   useEffect(() => {
-    const checkAuth = () => {
+    const fetchCurrentUser = async () => {
       try {
-        const storedUser = localStorage.getItem("lernify_user");
-        const authToken = localStorage.getItem("lernify_token");
-
-        if (storedUser && authToken) {
-          setUser(JSON.parse(storedUser));
+        // For now, we'll fetch the demo user from our database
+        // TODO: Replace with actual session-based authentication
+        const response = await fetch("/api/users/me");
+        if (response.ok) {
+          const { user } = await response.json();
+          setUser(user);
         }
       } catch (error) {
-        console.error("Error checking authentication:", error);
-        // Clear corrupted data
-        localStorage.removeItem("lernify_user");
-        localStorage.removeItem("lernify_token");
+        console.error("Error fetching current user:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    fetchCurrentUser();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
 
-      // TODO: Replace with actual API call
-      // In real implementation, validate email and password
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // TODO: Replace with actual authentication API call
+      // For now, we'll simulate login by fetching the demo user
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Mock validation - in real app, this would be server-side
-      if (!email || !password) {
-        throw new Error("Email and password are required");
+      const response = await fetch("/api/users/me");
+      if (response.ok) {
+        const { user } = await response.json();
+        setUser(user);
+
+        // Store session indicator (in real app, this would be handled by cookies/JWT)
+        localStorage.setItem("learnify_session", "active");
+        return true;
       }
 
-      // Mock user data
-      const mockUser: User = {
-        id: "1",
-        email,
-        firstName: "John",
-        lastName: "Doe",
-        level: 1,
-        xp: 505,
-        streak: 7,
-        hearts: 3,
-        maxHearts: 5,
-        achievements: ["first_lesson", "streak_3", "early_bird"],
-        completedCourses: [],
-        currentCourse: "js",
-        joinedAt: new Date().toISOString(),
-      };
-
-      // Mock authentication token
-      const mockToken = "mock_jwt_token_" + Date.now();
-
-      // Store in localStorage
-      localStorage.setItem("lernify_user", JSON.stringify(mockUser));
-      localStorage.setItem("lernify_token", mockToken);
-
-      setUser(mockUser);
-      return true;
+      return false;
     } catch (error) {
       console.error("Login error:", error);
       return false;
@@ -124,35 +104,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
 
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // TODO: Replace with actual user registration API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Mock user creation
-      const newUser: User = {
-        id: "new_" + Date.now(),
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        level: 1,
-        xp: 0,
-        streak: 0,
-        hearts: 5,
-        maxHearts: 5,
-        achievements: ["welcome"],
-        completedCourses: [],
-        currentCourse: "js",
-        joinedAt: new Date().toISOString(),
-      };
+      // For now, create a new user in the database
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          username:
+            userData.firstName.toLowerCase() +
+            "_" +
+            userData.lastName.toLowerCase(),
+          name: `${userData.firstName} ${userData.lastName}`,
+        }),
+      });
 
-      // Mock authentication token
-      const mockToken = "mock_jwt_token_" + Date.now();
+      if (response.ok) {
+        const { user } = await response.json();
+        setUser(user);
 
-      // Store in localStorage
-      localStorage.setItem("lernify_user", JSON.stringify(newUser));
-      localStorage.setItem("lernify_token", mockToken);
+        // Store session indicator
+        localStorage.setItem("learnify_session", "active");
+        return true;
+      }
 
-      setUser(newUser);
-      return true;
+      return false;
     } catch (error) {
       console.error("Registration error:", error);
       return false;
@@ -163,16 +143,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("lernify_user");
-    localStorage.removeItem("lernify_token");
+    localStorage.removeItem("learnify_session");
   };
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<User>) => {
     if (!user) return;
 
-    const updatedUser = { ...user, ...userData };
-    setUser(updatedUser);
-    localStorage.setItem("lernify_user", JSON.stringify(updatedUser));
+    try {
+      // Update user in database
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        const { user: updatedUser } = await response.json();
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
   };
 
   const value: AuthContextType = {

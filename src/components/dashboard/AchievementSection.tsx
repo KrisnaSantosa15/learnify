@@ -1,26 +1,60 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Achievement {
   id: number;
   title: string;
   description: string;
   icon: string;
-  progress: number;
-  maxProgress: number;
+  progress?: number;
+  maxProgress?: number;
   completedAt?: string;
   rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
   category: "course" | "activity" | "social" | "special";
   isNew?: boolean;
+  isUnlocked?: boolean;
+  unlockedAt?: string;
+  xpReward: number;
 }
 
 export default function AchievementSection() {
+  const { user } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [showUnlocked, setShowUnlocked] = useState<boolean>(true);
   const [showLocked, setShowLocked] = useState<boolean>(true);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const achievements: Achievement[] = [
+  // Load achievements from database
+  useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `/api/achievements${user?.id ? `?userId=${user.id}` : ""}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch achievements");
+        }
+        const data = await response.json();
+        setAchievements(data.achievements || []);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load achievements"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAchievements();
+  }, [user]);
+
+  // Fallback achievements data
+  const fallbackAchievements: Achievement[] = [
     {
       id: 1,
       title: "Quick Learner",
@@ -32,6 +66,8 @@ export default function AchievementSection() {
       rarity: "uncommon",
       category: "course",
       isNew: true,
+      isUnlocked: true,
+      xpReward: 100,
     },
     {
       id: 2,
@@ -43,6 +79,8 @@ export default function AchievementSection() {
       completedAt: "2025-04-03",
       rarity: "rare",
       category: "activity",
+      isUnlocked: true,
+      xpReward: 150,
     },
     {
       id: 3,
@@ -53,6 +91,8 @@ export default function AchievementSection() {
       maxProgress: 5,
       rarity: "common",
       category: "course",
+      isUnlocked: false,
+      xpReward: 50,
     },
     {
       id: 4,
@@ -64,6 +104,8 @@ export default function AchievementSection() {
       completedAt: "2025-03-23",
       rarity: "uncommon",
       category: "activity",
+      isUnlocked: true,
+      xpReward: 75,
     },
     {
       id: 5,
@@ -74,6 +116,8 @@ export default function AchievementSection() {
       maxProgress: 10,
       rarity: "epic",
       category: "social",
+      isUnlocked: false,
+      xpReward: 200,
     },
     {
       id: 6,
@@ -84,6 +128,8 @@ export default function AchievementSection() {
       maxProgress: 3,
       rarity: "rare",
       category: "activity",
+      isUnlocked: false,
+      xpReward: 150,
     },
     {
       id: 7,
@@ -95,11 +141,21 @@ export default function AchievementSection() {
       completedAt: "2025-01-15",
       rarity: "legendary",
       category: "special",
+      isUnlocked: true,
+      xpReward: 500,
     },
   ];
 
-  const filteredAchievements = achievements.filter((achievement) => {
-    const isCompleted = achievement.progress >= achievement.maxProgress;
+  // Use database achievements or fallback
+  const displayAchievements =
+    achievements.length > 0 ? achievements : fallbackAchievements;
+
+  const filteredAchievements = displayAchievements.filter((achievement) => {
+    const isCompleted =
+      achievement.isUnlocked ||
+      (achievement.progress !== undefined &&
+        achievement.maxProgress !== undefined &&
+        achievement.progress >= achievement.maxProgress);
     if (!showUnlocked && isCompleted) return false;
     if (!showLocked && !isCompleted) return false;
     if (selectedFilter !== "all" && achievement.category !== selectedFilter)
@@ -164,13 +220,107 @@ export default function AchievementSection() {
   };
 
   // Calculate achievement stats
-  const totalAchievements = achievements.length;
-  const completedAchievements = achievements.filter(
-    (a) => a.progress >= a.maxProgress
+  const totalAchievements = displayAchievements.length;
+  const completedAchievements = displayAchievements.filter(
+    (a) =>
+      a.isUnlocked ||
+      (a.progress !== undefined &&
+        a.maxProgress !== undefined &&
+        a.progress >= a.maxProgress)
   ).length;
   const completionRate = Math.round(
     (completedAchievements / totalAchievements) * 100
   );
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-dark-300/30 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden h-full flex flex-col">
+        <div className="p-5 border-b border-white/5">
+          <h2 className="text-xl font-bold text-white flex items-center">
+            <svg
+              className="w-5 h-5 mr-2 text-[#8e5ff5]"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+              <path d="M4 22h16" />
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+            </svg>
+            Achievements
+          </h2>
+        </div>
+        <div className="p-5 flex-1 flex justify-center items-center">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8e5ff5] mb-4"></div>
+            <p className="text-gray-400">Loading achievements...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-dark-300/30 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden h-full flex flex-col">
+        <div className="p-5 border-b border-white/5">
+          <h2 className="text-xl font-bold text-white flex items-center">
+            <svg
+              className="w-5 h-5 mr-2 text-[#8e5ff5]"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+              <path d="M4 22h16" />
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+            </svg>
+            Achievements
+          </h2>
+        </div>
+        <div className="p-5 flex-1 flex justify-center items-center">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-full bg-[#ff5e7d]/20 flex items-center justify-center mb-4">
+              <svg
+                className="w-6 h-6 text-[#ff5e7d]"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <p className="text-white font-medium mb-2">
+              Failed to load achievements
+            </p>
+            <p className="text-gray-400 text-sm">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-dark-300/30 backdrop-blur-sm border border-white/5 rounded-xl overflow-hidden h-full flex flex-col">
@@ -314,15 +464,18 @@ export default function AchievementSection() {
       <div className="p-5 flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filteredAchievements.map((achievement) => {
-            const isCompleted = achievement.progress >= achievement.maxProgress;
+            const isCompleted =
+              achievement.isUnlocked ||
+              (achievement.progress !== undefined &&
+                achievement.maxProgress !== undefined &&
+                achievement.progress >= achievement.maxProgress);
             const rarityStyle = getRarityStyle(achievement.rarity);
-            const progressColor = getProgressColor(
-              achievement.progress,
-              achievement.maxProgress
-            );
+            const progress = achievement.progress || 0;
+            const maxProgress = achievement.maxProgress || 1;
+            const progressColor = getProgressColor(progress, maxProgress);
             const progressPercentage = Math.min(
               100,
-              (achievement.progress / achievement.maxProgress) * 100
+              (progress / maxProgress) * 100
             );
 
             return (

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ProgrammingQuiz from "@/components/dashboard/ProgrammingQuiz";
+import QuizSection from "@/components/dashboard/QuizSection";
 import WelcomeMessage from "@/components/dashboard/WelcomeMessage";
 import Streaks from "@/components/dashboard/Streaks";
 import DailyQuests from "@/components/dashboard/DailyQuests";
@@ -18,7 +18,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Quiz Column - 2/3 width on desktop */}
         <div className="lg:col-span-2">
-          <ProgrammingQuiz />
+          <QuizSection />
         </div>
 
         {/* Sidebar Column - 1/3 width on desktop */}

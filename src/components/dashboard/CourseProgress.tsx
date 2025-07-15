@@ -1,48 +1,114 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  progressPercentage: number;
+  totalLessons: number;
+  completedLessons: number;
+  isEnrolled: boolean;
+  icon?: string;
+  color?: string;
+  lastAccessed?: string;
+  nextLesson?: string;
+  relatedAchievements?: string[];
+}
 
 export default function CourseProgress() {
-  // Daily study goal state
+  const { user } = useAuth();
   const [dailyGoal] = useState(60); // in minutes
   const [dailyProgress] = useState(45); // in minutes
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for courses in progress
-  const courses = [
+  // Load user's enrolled courses
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (!user?.id) return;
+
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/courses?userId=${user.id}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch courses");
+        }
+        const data = await response.json();
+        // Filter only enrolled courses
+        const enrolledCourses = data.courses.filter(
+          (course: Course) => course.isEnrolled
+        );
+        setCourses(enrolledCourses);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load courses");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [user]);
+
+  // Mock data for courses in progress (fallback)
+  const fallbackCourses = [
     {
       id: 1,
       title: "Python Mastery",
-      progress: 82,
+      progressPercentage: 82,
       category: "Programming",
       icon: "🐍",
       color: "blue",
       lastAccessed: "Today",
       nextLesson: "Advanced Data Structures",
       relatedAchievements: ["Quick Learner", "Code Streak"],
+      description: "Master Python programming",
+      difficulty: "Intermediate",
+      totalLessons: 30,
+      completedLessons: 25,
+      isEnrolled: true,
     },
     {
       id: 2,
       title: "React Fundamentals",
-      progress: 45,
+      progressPercentage: 45,
       category: "Web Development",
       icon: "⚛️",
       color: "purple",
       lastAccessed: "Yesterday",
       nextLesson: "State Management",
       relatedAchievements: ["Weekend Warrior"],
+      description: "Learn React basics",
+      difficulty: "Beginner",
+      totalLessons: 20,
+      completedLessons: 9,
+      isEnrolled: true,
     },
     {
       id: 3,
       title: "Machine Learning",
-      progress: 67,
+      progressPercentage: 67,
       category: "Data Science",
       icon: "🤖",
       color: "green",
       lastAccessed: "2 days ago",
       nextLesson: "Neural Networks",
       relatedAchievements: ["Quiz Master"],
+      description: "Introduction to ML",
+      difficulty: "Advanced",
+      totalLessons: 40,
+      completedLessons: 27,
+      isEnrolled: true,
     },
   ];
+
+  // Use database courses or fallback
+  const displayCourses = courses.length > 0 ? courses : fallbackCourses;
 
   // Course recommendations based on current progress
   const recommendations = [
@@ -142,8 +208,8 @@ export default function CourseProgress() {
 
       <div className="p-5 flex-1 overflow-y-auto">
         <div className="flex flex-col space-y-4">
-          {courses.map((course) => {
-            const colorClasses = getColorClass(course.color);
+          {displayCourses.map((course) => {
+            const colorClasses = getColorClass(course.color || "blue");
             return (
               <div
                 key={course.id}
@@ -167,11 +233,11 @@ export default function CourseProgress() {
                 </div>
 
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs text-gray-400">{`Progress: ${course.progress}%`}</span>
+                  <span className="text-xs text-gray-400">{`Progress: ${course.progressPercentage}%`}</span>
                   <span className={colorClasses.text + " text-xs"}>
-                    {course.progress < 30
+                    {course.progressPercentage < 30
                       ? "Just Started"
-                      : course.progress < 70
+                      : course.progressPercentage < 70
                       ? "In Progress"
                       : "Almost Complete"}
                   </span>
@@ -180,7 +246,7 @@ export default function CourseProgress() {
                 <div className="h-1.5 w-full bg-dark-300 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${colorClasses.bg}`}
-                    style={{ width: `${course.progress}%` }}
+                    style={{ width: `${course.progressPercentage}%` }}
                   ></div>
                 </div>
 
