@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "next-auth/react";
 
 interface Challenge {
   id: string;
@@ -153,7 +153,7 @@ console.log(reverseString("JavaScript")); // Should output: "tpircSavaJ"`,
 ];
 
 export default function ProgrammingQuiz() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [feedback, setFeedback] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -238,8 +238,8 @@ export default function ProgrammingQuiz() {
         setFeedback("Great job! Your solution looks correct. Keep coding!");
 
         // Award XP (in a real app, this would be sent to backend)
-        if (user?.id) {
-          // Update user XP
+        if (session?.user) {
+          // TODO: Update user XP with NextAuth
         }
       } else {
         setFeedback(

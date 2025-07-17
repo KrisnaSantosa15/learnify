@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { signIn, useSession } from "next-auth/react";
 import AuthHeader from "@/components/auth/AuthHeader";
 
 export default function RegisterPage() {
@@ -17,8 +17,16 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { register, isLoading } = useAuth();
+  const { data: session } = useSession();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (session) {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -61,22 +69,49 @@ export default function RegisterPage() {
 
     if (!validateForm()) return;
 
+    setIsLoading(true);
+
     try {
-      const success = await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
+      // Register the user via our API
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
-      if (success) {
-        router.push("/dashboard");
+      if (response.ok) {
+        // Auto-login after successful registration
+        const result = await signIn("credentials", {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          router.push("/dashboard");
+        } else {
+          setErrors({
+            general:
+              "Registration successful but login failed. Please try logging in manually.",
+          });
+        }
       } else {
-        setErrors({ general: "Registration failed. Please try again." });
+        const data = await response.json();
+        setErrors({
+          general: data.error || "Registration failed. Please try again.",
+        });
       }
     } catch (error) {
       setErrors({ general: "An error occurred. Please try again." });
       console.error("Registration error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

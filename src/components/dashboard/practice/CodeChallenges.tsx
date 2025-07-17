@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import AdvancedCodeEditor from "../AdvancedCodeEditor";
+import CodeEditor from "../CodeEditor";
 
 interface TestResult {
   id: number;
@@ -219,7 +219,7 @@ export default function CodeChallenges({
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Code Editor */}
         <div>
-          <AdvancedCodeEditor
+          <CodeEditor
             code={userCode}
             onChange={setUserCode}
             language="javascript"

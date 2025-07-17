@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "next-auth/react";
 
 // Motivational quotes for developers
 const quotes = [
@@ -16,7 +16,7 @@ const quotes = [
 ];
 
 export default function WelcomeMessage() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [motivationalQuote, setMotivationalQuote] = useState("");
 
@@ -65,11 +65,12 @@ export default function WelcomeMessage() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#28c7f9] to-[#8e5ff5] flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                {user?.firstName?.charAt(0) || "C"}
+                {session?.user?.name?.charAt(0) || "C"}
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  {getGreeting()}, {user?.firstName || "Coder"}! 👋
+                  {getGreeting()},{" "}
+                  {session?.user?.name?.split(" ")[0] || "Coder"}! 👋
                 </h1>
                 <p className="text-gray-400 text-sm">
                   Ready to level up your coding skills?

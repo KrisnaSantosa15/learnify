@@ -5,18 +5,25 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind-4-blue?style=for-the-badge&logo=tailwindcss)
 
-A modern, interactive, and futuristic educational platform that transforms learning into an engaging gaming experience. Lernify combines cutting-edge web technologies with gamification mechanics to create an immersive learning environment inspired by platforms like Duolingo.
+A modern, interactive, and futuristic educational platform that transforms
+learning into an engaging gaming experience. Lernify combines cutting-edge web
+technologies with gamification mechanics to create an immersive learning
+environment inspired by platforms like Duolingo.
 
 ## 🌟 Features
 
 ### 🎯 **Core Learning Features**
-- **Interactive Programming Quizzes** - Real-time coding challenges with immediate feedback
-- **Skill Tree Visualization** - Visual learning paths with interconnected skills
+
+- **Interactive Programming Quizzes** - Real-time coding challenges with
+  immediate feedback
+- **Skill Tree Visualization** - Visual learning paths with interconnected
+  skills
 - **Progress Tracking** - Comprehensive analytics and learning insights
 - **Daily Study Goals** - Customizable learning targets with streak tracking
 - **AI-Powered Hints** - Intelligent assistance for challenging problems
 
 ### 🎮 **Gamification System**
+
 - **Achievement Badges** - Earn rewards for completing milestones
 - **XP & Level System** - Progress through levels with experience points
 - **Streak Tracking** - Maintain learning streaks for bonus rewards
@@ -25,6 +32,7 @@ A modern, interactive, and futuristic educational platform that transforms learn
 - **Daily Quests** - Special challenges for extra rewards
 
 ### 🎨 **Modern UI/UX**
+
 - **Glassmorphism Design** - Beautiful frosted glass effects
 - **Neon Accents** - Vibrant color scheme with glowing elements
 - **Smooth Animations** - Framer Motion & GSAP powered interactions
@@ -32,6 +40,7 @@ A modern, interactive, and futuristic educational platform that transforms learn
 - **Responsive Design** - Optimized for all devices and screen sizes
 
 ### 📱 **Dashboard Features**
+
 - **Course Management** - Switch between programming languages
 - **Real-time Statistics** - Track XP, hearts, streaks, and achievements
 - **Neural Enhancer** - AI tutor simulation for personalized learning
@@ -40,6 +49,7 @@ A modern, interactive, and futuristic educational platform that transforms learn
 ## 🚀 Tech Stack
 
 ### **Frontend**
+
 - **Next.js 15** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first styling
@@ -49,6 +59,7 @@ A modern, interactive, and futuristic educational platform that transforms learn
 - **Lottie React** - Lightweight animations
 
 ### **Development Tools**
+
 - **ESLint** - Code linting and formatting
 - **PostCSS** - CSS processing
 - **Autoprefixer** - CSS vendor prefixes
@@ -97,41 +108,104 @@ lernify/
 ## 🛠️ Getting Started
 
 ### **Prerequisites**
+
 - Node.js 20.x or later
 - npm 11.x or later
 
 ### **Installation**
 
 1. **Clone the repository**
+
 ```bash
 git clone https://github.com/KrisnaSantosa15/learnify.git
 cd lernify
 ```
 
 2. **Install dependencies**
+
 ```bash
 npm install
 ```
 
 3. **Start the development server**
+
 ```bash
 npm run dev
 ```
 
-4. **Open your browser**
-Navigate to [http://localhost:3000](http://localhost:3000)
+4. **Open your browser** Navigate to
+   [http://localhost:3000](http://localhost:3000)
 
 ### **Available Scripts**
+
 ```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint
+npm run dev        # Start development server
+npm run build      # Build for production
+npm run start      # Start production server
+npm run lint       # Run ESLint
+npm run db:generate # Generate Prisma client
+npm run db:push    # Push database schema
+npm run db:seed    # Seed database with initial data
+npm run db:studio  # Open Prisma Studio
 ```
+
+## 🔧 Development Setup
+
+### **Environment Configuration**
+
+1. **Copy environment file**
+
+```bash
+cp .env.example .env
+```
+
+2. **Configure your environment variables**
+
+```env
+# Database (Neon PostgreSQL)
+DATABASE_URL=your_postgres_connection_string
+
+# NextAuth.js
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_secret_key
+
+# Google Gemini AI (for AI features)
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+### **Database Setup**
+
+```bash
+# Generate Prisma client
+npm run db:generate
+
+# Push schema to database
+npm run db:push
+
+# Seed database with initial data
+npm run db:seed
+```
+
+### **Contributing Guidelines**
+
+1. **Create a feature branch** from `main`
+2. **Make your changes** following the code style
+3. **Run tests and linting** before committing
+4. **Create a pull request** with detailed description
+
+### **Troubleshooting**
+
+#### **Common Issues**
+
+- **Build errors**: Check TypeScript errors with `npm run build`
+- **Database connection**: Verify `DATABASE_URL` in `.env`
+- **Environment variables**: Ensure all required variables are set
+- **Node version**: Use Node.js 20.x or later
 
 ## 🎮 How to Use
 
 ### **Landing Page**
+
 - **Hero Section** - Introduction to the platform with animated elements
 - **Features** - Interactive showcase of platform capabilities
 - **Learning Path** - Visual skill tree demonstration
@@ -141,6 +215,7 @@ npm run lint     # Run ESLint
 - **Pricing** - Subscription options
 
 ### **Dashboard**
+
 - **Course Selection** - Choose from JavaScript, Python, HTML/CSS, React
 - **Daily Goals** - Set and track study time objectives
 - **Quiz System** - Interactive programming challenges
@@ -152,15 +227,19 @@ npm run lint     # Run ESLint
 ## 🎨 Design System
 
 ### **Color Palette**
+
 - **Dark Themes**: `#0a0a0a`, `#121212`, `#1a1a1a`, `#232323`
-- **Neon Accents**: Blue (`#00f0ff`), Purple (`#9e00ff`), Pink (`#ff00f5`), Green (`#00ff66`)
+- **Neon Accents**: Blue (`#00f0ff`), Purple (`#9e00ff`), Pink (`#ff00f5`),
+  Green (`#00ff66`)
 - **Glassmorphism**: Semi-transparent backgrounds with backdrop blur
 
 ### **Typography**
+
 - **Primary**: Geist Sans (variable weight)
 - **Monospace**: Geist Mono (for code)
 
 ### **Animations**
+
 - **Scroll Animations**: GSAP-powered reveal effects
 - **Micro-interactions**: Hover and click feedback
 - **3D Elements**: Three.js skill tree visualizations
@@ -198,7 +277,8 @@ npm run lint     # Run ESLint
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
+for details.
 
 ## 🙏 Acknowledgments
 

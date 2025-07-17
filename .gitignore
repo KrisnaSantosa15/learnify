@@ -1,44 +1,235 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# ==================== DEPENDENCIES ====================
+# Node.js dependencies
 /node_modules
 /.pnp
 .pnp.*
+
+# Yarn
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
+# npm
+npm-debug.log*
+.pnpm-debug.log*
 
-# next.js
+# ==================== NEXT.JS ====================
+# Next.js build outputs
 /.next/
 /out/
 
-# production
+# Next.js cache
+.next
+
+# Next.js static exports
+/dist/
+
+# Production builds
 /build
 
-# misc
-.DS_Store
-*.pem
+# ==================== ENVIRONMENT VARIABLES ====================
+# Environment files (contains sensitive data)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# Keep example file for reference
+!.env.example
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
+# ==================== TYPESCRIPT ====================
+# TypeScript build info
 *.tsbuildinfo
 next-env.d.ts
 
-guides/
+# TypeScript cache
+.tscache
+
+# ==================== TESTING ====================
+# Coverage reports
+/coverage
+*.lcov
+
+# Jest
+.nyc_output
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# ==================== PRISMA ====================
+# Prisma generated files (auto-generated on build)
 /src/generated/prisma
+/generated
+
+# Prisma migration files (these should be committed, but backups can be ignored)
+prisma/migrations/**/migration.sql.backup
+
+# ==================== DATABASE ====================
+# Local database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Database dumps
+*.sql.gz
+*.dump
+
+# ==================== EDITORS & IDEs ====================
+# VSCode - ignore personal settings but keep shared workspace config
+.vscode/settings.json.user
+.vscode/launch.json
+.vscode/*.code-workspace
+
+# Keep useful shared VSCode files
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# JetBrains IDEs
+.idea/
+*.swp
+*.swo
+
+# Vim
+*~
+.*.swp
+.*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ==================== OPERATING SYSTEM ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ==================== DEPLOYMENT ====================
+# Vercel
+.vercel
+
+# Netlify
+.netlify
+
+# AWS
+.aws-sam/
+
+# ==================== LOGS ====================
+# Runtime logs
+logs
+*.log
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# ==================== TEMPORARY FILES ====================
+# Temporary folders
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# ==================== SECURITY ====================
+# Certificate files
+*.pem
+*.key
+*.crt
+*.csr
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# ==================== MEDIA & ASSETS ====================
+# Large media files (optional - uncomment if needed)
+# *.mp4
+# *.avi
+# *.mov
+# *.wmv
+# *.flv
+# *.webm
+
+# ==================== DOCUMENTATION ====================
+# Documentation that shouldn't be committed
+/guides/
+/docs/private/
+
+# API documentation cache
+.redocly/
+
+# ==================== MISCELLANEOUS ====================
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Optional package manager logs
+package-lock.json.backup
+
+# Storybook build outputs
+storybook-static
+
+# Turborepo
+.turbo

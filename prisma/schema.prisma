@@ -15,6 +15,7 @@ model User {
   id              String    @id @default(cuid())
   email           String    @unique
   username        String?   @unique
+  password        String? // For credentials auth
   name            String?
   avatar          String?
   bio             String?
@@ -26,22 +27,50 @@ model User {
   lastActive      DateTime  @default(now())
   isVerified      Boolean   @default(false)
   plan            Plan      @default(FREE)
+  role            Role      @default(USER)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  // NextAuth.js fields
+  emailVerified DateTime?
+  image         String?
+
   // Relations
-  submissions     CodeSubmission[]
-  achievements    UserAchievement[]
-  progress        CourseProgress[]
-  quizAttempts    QuizAttempt[]
-  leaderboard     LeaderboardEntry[]
-  comments        Comment[]
-  sessions        Session[]
+  submissions  CodeSubmission[]
+  achievements UserAchievement[]
+  progress     CourseProgress[]
+  quizAttempts QuizAttempt[]
+  leaderboard  LeaderboardEntry[]
+  comments     Comment[]
+
+  // NextAuth.js relations
+  accounts Account[]
+  sessions Session[]
 
   @@map("users")
 }
 
-// Session model for NextAuth.js
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -52,6 +81,15 @@ model Session {
   @@map("sessions")
 }
 
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
 // Enum for user plans
 enum Plan {
   FREE
@@ -59,18 +97,24 @@ enum Plan {
   PREMIUM
 }
 
+// Enum for user roles
+enum Role {
+  USER
+  ADMIN
+}
+
 // Course management
 model Course {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
   description String?
   difficulty  Difficulty
-  technology  String   // JavaScript, Python, React, etc.
+  technology  String // JavaScript, Python, React, etc.
   thumbnail   String?
-  isPublished Boolean  @default(false)
+  isPublished Boolean    @default(false)
   order       Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   // Relations
   modules    Module[]
@@ -84,7 +128,7 @@ model Module {
   id          String   @id @default(cuid())
   title       String
   description String?
-  content     Json     // Rich content structure
+  content     Json // Rich content structure
   order       Int
   courseId    String
   isCompleted Boolean  @default(false)
@@ -92,7 +136,7 @@ model Module {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  course   Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress ModuleProgress[]
   lessons  Lesson[]
 
@@ -102,7 +146,7 @@ model Module {
 model Lesson {
   id          String     @id @default(cuid())
   title       String
-  content     Json       // Rich content with code examples
+  content     Json // Rich content with code examples
   type        LessonType
   order       Int
   moduleId    String
@@ -134,16 +178,16 @@ enum Difficulty {
 
 // Progress tracking
 model CourseProgress {
-  id            String   @id @default(cuid())
-  userId        String
-  courseId      String
-  isCompleted   Boolean  @default(false)
-  completedAt   DateTime?
-  progress      Float    @default(0) // 0-100 percentage
-  timeSpent     Int      @default(0) // in minutes
-  lastAccessed  DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default(cuid())
+  userId       String
+  courseId     String
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
+  progress     Float     @default(0) // 0-100 percentage
+  timeSpent    Int       @default(0) // in minutes
+  lastAccessed DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relations
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -155,14 +199,14 @@ model CourseProgress {
 }
 
 model ModuleProgress {
-  id              String   @id @default(cuid())
+  id               String    @id @default(cuid())
   courseProgressId String
-  moduleId        String
-  isCompleted     Boolean  @default(false)
-  completedAt     DateTime?
-  timeSpent       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  moduleId         String
+  isCompleted      Boolean   @default(false)
+  completedAt      DateTime?
+  timeSpent        Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
   courseProgress CourseProgress   @relation(fields: [courseProgressId], references: [id], onDelete: Cascade)
@@ -174,14 +218,14 @@ model ModuleProgress {
 }
 
 model LessonProgress {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   moduleProgressId String
   lessonId         String
-  isCompleted      Boolean  @default(false)
+  isCompleted      Boolean   @default(false)
   completedAt      DateTime?
-  timeSpent        Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  timeSpent        Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
   moduleProgress ModuleProgress @relation(fields: [moduleProgressId], references: [id], onDelete: Cascade)
@@ -193,26 +237,26 @@ model LessonProgress {
 
 // Coding challenges and practice
 model Challenge {
-  id          String          @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   description String
   difficulty  Difficulty
   technology  String
   type        ChallengeType
-  prompt      String          // Challenge instructions
-  starterCode String?         // Initial code template
-  solution    String?         // Expected solution
-  testCases   Json            // Test cases for validation
+  prompt      String // Challenge instructions
+  starterCode String? // Initial code template
+  solution    String? // Expected solution
+  testCases   Json // Test cases for validation
   hints       String[]
-  xpReward    Int             @default(50)
-  timeLimit   Int?            // in minutes
+  xpReward    Int           @default(50)
+  timeLimit   Int? // in minutes
   courseId    String?
-  isPublished Boolean         @default(false)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  isPublished Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   // Relations
-  course      Course?           @relation(fields: [courseId], references: [id])
+  course      Course?          @relation(fields: [courseId], references: [id])
   submissions CodeSubmission[]
 
   @@map("challenges")
@@ -233,8 +277,8 @@ model CodeSubmission {
   code        String
   language    String
   status      SubmissionStatus
-  score       Int?             // 0-100
-  timeSpent   Int              // in seconds
+  score       Int? // 0-100
+  timeSpent   Int // in seconds
   hints       Int              @default(0) // number of hints used
   passedTests Int              @default(0)
   totalTests  Int              @default(0)
@@ -256,19 +300,45 @@ enum SubmissionStatus {
   ERROR
 }
 
+// Category model for organizing quizzes and courses
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String? // Icon name or emoji
+  color       String? // Hex color code for UI theming
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  quizzes Quiz[]
+
+  @@map("categories")
+}
+
 // Quiz system
 model Quiz {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   title       String
   description String?
   difficulty  Difficulty
-  category    String
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   questions   QuizQuestion[]
-  timeLimit   Int?          // in minutes
-  xpReward    Int           @default(30)
-  isPublished Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  timeLimit   Int? // in minutes
+  xpReward    Int            @default(30)
+  isPublished Boolean        @default(false)
+
+  // Advanced settings
+  randomizeQuestions  Boolean @default(false)
+  showProgress        Boolean @default(true)
+  allowRetakes        Boolean @default(true)
+  showExplanations    Boolean @default(true)
+  instantFeedback     Boolean @default(false)
+  certificateEligible Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   attempts QuizAttempt[]
@@ -281,7 +351,7 @@ model QuizQuestion {
   quizId        String
   question      String
   options       String[] // Array of options
-  correctAnswer Int      // Index of correct option
+  correctAnswer Int // Index of correct option
   explanation   String?
   order         Int
   points        Int      @default(10)
@@ -295,16 +365,16 @@ model QuizQuestion {
 }
 
 model QuizAttempt {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   quizId      String
-  score       Int      // Total points earned
-  maxScore    Int      // Maximum possible points
-  timeSpent   Int      // in seconds
-  answers     Json     // User's answers
-  isCompleted Boolean  @default(false)
+  score       Int // Total points earned
+  maxScore    Int // Maximum possible points
+  timeSpent   Int // in seconds
+  answers     Json // User's answers
+  isCompleted Boolean   @default(false)
   completedAt DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -321,7 +391,7 @@ model Achievement {
   icon        String
   rarity      Rarity
   category    String
-  criteria    Json     // Conditions to unlock achievement
+  criteria    Json // Conditions to unlock achievement
   xpReward    Int      @default(100)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -359,9 +429,9 @@ model LeaderboardEntry {
   id        String          @id @default(cuid())
   userId    String
   type      LeaderboardType
-  value     Int             // XP, streak, etc.
+  value     Int // XP, streak, etc.
   rank      Int
-  period    String          // weekly, monthly, all-time
+  period    String // weekly, monthly, all-time
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
@@ -381,14 +451,14 @@ enum LeaderboardType {
 
 // Community features
 model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  userId    String
-  target    String   // challenge_id, course_id, etc.
-  targetType String  // challenge, course, etc.
-  likes     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  content    String
+  userId     String
+  target     String // challenge_id, course_id, etc.
+  targetType String // challenge, course, etc.
+  likes      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

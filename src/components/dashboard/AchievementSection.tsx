@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "next-auth/react";
 
 interface Achievement {
   id: number;
@@ -20,7 +20,7 @@ interface Achievement {
 }
 
 export default function AchievementSection() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [showUnlocked, setShowUnlocked] = useState<boolean>(true);
   const [showLocked, setShowLocked] = useState<boolean>(true);
@@ -33,9 +33,7 @@ export default function AchievementSection() {
     const fetchAchievements = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `/api/achievements${user?.id ? `?userId=${user.id}` : ""}`
-        );
+        const response = await fetch(`/api/achievements`);
         if (!response.ok) {
           throw new Error("Failed to fetch achievements");
         }
@@ -51,7 +49,7 @@ export default function AchievementSection() {
     };
 
     fetchAchievements();
-  }, [user]);
+  }, [session?.user]);
 
   // Fallback achievements data
   const fallbackAchievements: Achievement[] = [

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { signIn, useSession } from "next-auth/react";
 import AuthHeader from "@/components/auth/AuthHeader";
 
 export default function LoginPage() {
@@ -11,23 +11,39 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { data: session } = useSession();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (session) {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        router.push("/dashboard");
-      } else {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
         setError("Invalid email or password");
+      } else if (result?.ok) {
+        router.push("/dashboard");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
       console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 

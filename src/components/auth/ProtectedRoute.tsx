@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -13,17 +13,17 @@ export default function ProtectedRoute({
   children,
   redirectTo = "/auth/login",
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (status === "unauthenticated") {
       router.push(redirectTo);
     }
-  }, [isAuthenticated, isLoading, router, redirectTo]);
+  }, [status, router, redirectTo]);
 
   // Show loading spinner while checking authentication
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-[#0a111f] flex items-center justify-center">
         <div className="text-center">
@@ -65,7 +65,7 @@ export default function ProtectedRoute({
   }
 
   // Don't render children if not authenticated
-  if (!isAuthenticated) {
+  if (status === "unauthenticated") {
     return null;
   }
 

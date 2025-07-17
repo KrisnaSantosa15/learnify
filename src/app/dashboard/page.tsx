@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import QuizSection from "@/components/dashboard/QuizSection";
+import { RoleBasedDashboard } from "@/components/dashboard/RoleBasedDashboard";
 import WelcomeMessage from "@/components/dashboard/WelcomeMessage";
 import Streaks from "@/components/dashboard/Streaks";
 import DailyQuests from "@/components/dashboard/DailyQuests";
@@ -14,25 +14,15 @@ export default function DashboardPage() {
         <WelcomeMessage />
       </div>
 
-      {/* Main content - 2 column on desktop, 1 column on mobile/tablet */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Quiz Column - 2/3 width on desktop */}
-        <div className="lg:col-span-2">
-          <QuizSection />
-        </div>
+      {/* Role-based Dashboard Content */}
+      <div className="mb-8">
+        <RoleBasedDashboard />
+      </div>
 
-        {/* Sidebar Column - 1/3 width on desktop */}
-        <div className="space-y-6">
-          {/* Streak - compact for sidebar */}
-          <div>
-            <Streaks />
-          </div>
-
-          {/* Daily goals - compact for sidebar */}
-          <div>
-            <DailyQuests />
-          </div>
-        </div>
+      {/* Secondary Features */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Streaks />
+        <DailyQuests />
       </div>
     </div>
   );

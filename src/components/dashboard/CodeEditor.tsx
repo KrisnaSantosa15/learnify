@@ -36,7 +36,7 @@ const useDropdownStyles = () => {
   }, []);
 };
 
-interface AdvancedCodeEditorProps {
+interface CodeEditorProps {
   code: string;
   onChange: (value: string) => void;
   language?: string;
@@ -55,7 +55,7 @@ interface AdvancedCodeEditorProps {
   onReset?: () => void;
 }
 
-export default function AdvancedCodeEditor({
+export default function CodeEditor({
   code,
   onChange,
   language = "javascript",
@@ -72,7 +72,7 @@ export default function AdvancedCodeEditor({
   onLanguageChange,
   availableLanguages = ["javascript", "html", "css", "python"],
   onReset,
-}: AdvancedCodeEditorProps) {
+}: CodeEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [editorFontSize, setEditorFontSize] = useState(fontSize);

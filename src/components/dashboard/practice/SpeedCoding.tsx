@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import AdvancedCodeEditor from "../AdvancedCodeEditor";
+import CodeEditor from "../CodeEditor";
 
 interface SpeedChallenge {
   id: number;
@@ -220,7 +220,7 @@ export default function SpeedCoding() {
       )}
 
       {/* Code Editor */}
-      <AdvancedCodeEditor
+      <CodeEditor
         code={userCode}
         onChange={setUserCode}
         language="javascript"

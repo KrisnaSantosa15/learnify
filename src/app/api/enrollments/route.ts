@@ -102,16 +102,20 @@ export async function GET(request: NextRequest) {
     // Calculate progress for each enrollment
     const enrollmentsWithProgress = enrollments.map((enrollment) => {
       const totalLessons = enrollment.course.modules.reduce(
-        (total: number, module: any) => total + module.lessons.length,
+        (total: number, module: { lessons: unknown[] }) =>
+          total + module.lessons.length,
         0
       );
 
       const completedLessons = enrollment.course.modules.reduce(
-        (total: number, module: any) => {
+        (
+          total: number,
+          module: { lessons: { progress: { isCompleted: boolean }[] }[] }
+        ) => {
           return (
             total +
             module.lessons.filter(
-              (lesson: any) =>
+              (lesson: { progress: { isCompleted: boolean }[] }) =>
                 lesson.progress &&
                 lesson.progress.length > 0 &&
                 lesson.progress[0].isCompleted

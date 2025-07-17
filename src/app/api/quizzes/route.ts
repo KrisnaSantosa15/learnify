@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
-// GET /api/quizzes - Get all published quizzes
+// GET /api/quizzes - Get all published quizzes (or all quizzes for admin)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
     const difficulty = searchParams.get("difficulty");
+    const admin = searchParams.get("admin"); // Add admin parameter
 
-    const whereClause: {
-      isPublished: boolean;
-      category?: string;
-      difficulty?: string;
-    } = {
-      isPublished: true,
-    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereClause: any = {};
+
+    // Only filter by isPublished if not admin
+    if (!admin || admin !== "true") {
+      whereClause.isPublished = true;
+    }
 
     if (category && category !== "All") {
-      whereClause.category = category;
+      whereClause.categoryId = category;
     }
 
     if (difficulty) {
@@ -27,6 +30,7 @@ export async function GET(request: NextRequest) {
     const quizzes = await prisma.quiz.findMany({
       where: whereClause,
       include: {
+        category: true,
         questions: {
           orderBy: {
             order: "asc",
@@ -43,7 +47,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ quizzes });
+    return NextResponse.json(quizzes);
   } catch (error) {
     console.error("Error fetching quizzes:", error);
     return NextResponse.json(
@@ -56,14 +60,30 @@ export async function GET(request: NextRequest) {
 // POST /api/quizzes - Create a new quiz (admin functionality)
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     const {
       title,
       description,
       difficulty,
-      category,
+      categoryId,
       timeLimit,
       xpReward,
       questions,
+      isPublished,
+      randomizeQuestions,
+      showProgress,
+      allowRetakes,
+      showExplanations,
+      instantFeedback,
+      certificateEligible,
     } = await request.json();
 
     const quiz = await prisma.quiz.create({
@@ -71,10 +91,18 @@ export async function POST(request: NextRequest) {
         title,
         description,
         difficulty: difficulty.toUpperCase(),
-        category,
+        categoryId,
         timeLimit,
         xpReward: xpReward || 100,
-        isPublished: true,
+        isPublished: isPublished !== undefined ? isPublished : true,
+
+        // Advanced settings
+        randomizeQuestions: randomizeQuestions || false,
+        showProgress: showProgress || true,
+        allowRetakes: allowRetakes || true,
+        showExplanations: showExplanations || true,
+        instantFeedback: instantFeedback || false,
+        certificateEligible: certificateEligible || false,
         questions: {
           create: questions.map(
             (
@@ -98,6 +126,7 @@ export async function POST(request: NextRequest) {
         },
       },
       include: {
+        category: true,
         questions: true,
       },
     });

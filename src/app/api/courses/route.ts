@@ -44,19 +44,29 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate progress for each course if userId is provided
-    const coursesWithProgress = courses.map((course: any) => {
-      if (!userId) return course;
+    const coursesWithProgress = courses.map((course: unknown) => {
+      const courseData = course as {
+        modules: Array<{
+          lessons: Array<{
+            progress: Array<{ isCompleted: boolean }>;
+          }>;
+        }>;
+        enrollments?: Array<unknown>;
+        [key: string]: unknown;
+      };
 
-      const totalLessons = course.modules.reduce(
-        (total: number, module: any) => total + module.lessons.length,
+      if (!userId) return courseData;
+
+      const totalLessons = courseData.modules.reduce(
+        (total: number, module) => total + module.lessons.length,
         0
       );
-      const completedLessons = course.modules.reduce(
-        (total: number, module: any) => {
+      const completedLessons = courseData.modules.reduce(
+        (total: number, module) => {
           return (
             total +
             module.lessons.filter(
-              (lesson: any) =>
+              (lesson) =>
                 lesson.progress &&
                 lesson.progress.length > 0 &&
                 lesson.progress[0].isCompleted
@@ -72,11 +82,11 @@ export async function GET(request: NextRequest) {
           : 0;
 
       return {
-        ...course,
+        ...courseData,
         progressPercentage,
         totalLessons,
         completedLessons,
-        isEnrolled: course.enrollments && course.enrollments.length > 0,
+        isEnrolled: courseData.enrollments && courseData.enrollments.length > 0,
       };
     });
 

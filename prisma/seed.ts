@@ -1,17 +1,21 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // Create sample users
+  // Create sample users with hashed passwords
+  const hashedPassword = await bcrypt.hash("password123", 12);
+
   const users = await Promise.all([
     prisma.user.create({
       data: {
         email: "demo@learnifycode.com",
         username: "demo_user",
         name: "Demo User",
+        password: hashedPassword,
         level: 5,
         xp: 1250,
         streak: 7,
@@ -23,6 +27,7 @@ async function main() {
         email: "beginner@learnifycode.com",
         username: "code_newbie",
         name: "Code Newbie",
+        password: hashedPassword,
         level: 1,
         xp: 150,
         streak: 3,
@@ -32,6 +37,60 @@ async function main() {
   ]);
 
   console.log("✅ Created users:", users.length);
+
+  // Create default categories
+  const categories = await Promise.all([
+    prisma.category.create({
+      data: {
+        name: "Programming Languages",
+        description: "Learn various programming languages",
+        icon: "💻",
+        color: "#3B82F6",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Web Development",
+        description: "Frontend and backend web development",
+        icon: "🌐",
+        color: "#10B981",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Data Structures",
+        description: "Algorithms and data structures",
+        icon: "📊",
+        color: "#8B5CF6",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Database",
+        description: "Database design and SQL",
+        icon: "🗄️",
+        color: "#F59E0B",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "DevOps",
+        description: "Development operations and deployment",
+        icon: "⚙️",
+        color: "#EF4444",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Mobile Development",
+        description: "iOS and Android app development",
+        icon: "📱",
+        color: "#06B6D4",
+      },
+    }),
+  ]);
+
+  console.log("✅ Created categories:", categories.length);
 
   // Create sample courses
   const courses = await Promise.all([
@@ -178,15 +237,24 @@ async function main() {
 
   console.log("✅ Created achievements:", achievements.length);
 
-  // Create sample quiz
+  // Get category references for quizzes
+  const programmingCategory = categories.find(
+    (c) => c.name === "Programming Languages"
+  );
+  const webDevCategory = categories.find((c) => c.name === "Web Development");
+  const dataStructuresCategory = categories.find(
+    (c) => c.name === "Data Structures"
+  );
+
+  // Create sample quizzes with better categorization
   await prisma.quiz.create({
     data: {
-      title: "JavaScript Basics Quiz",
-      description: "Test your knowledge of JavaScript fundamentals",
+      title: "JavaScript Fundamentals",
+      description: "Test your knowledge of JavaScript basics and core concepts",
       difficulty: "BEGINNER",
-      category: "JavaScript",
-      timeLimit: 10,
-      xpReward: 100,
+      categoryId: programmingCategory!.id,
+      timeLimit: 15,
+      xpReward: 120,
       isPublished: true,
       questions: {
         create: [
@@ -195,9 +263,9 @@ async function main() {
             options: ["push()", "pop()", "shift()", "unshift()"],
             correctAnswer: 0,
             explanation:
-              "The push() method adds one or more elements to the end of an array.",
+              "The push() method adds one or more elements to the end of an array and returns the new length.",
             order: 1,
-            points: 10,
+            points: 15,
           },
           {
             question: 'What does "const" declare in JavaScript?',
@@ -209,16 +277,203 @@ async function main() {
             ],
             correctAnswer: 1,
             explanation:
-              "The const keyword declares a constant variable that cannot be reassigned.",
+              "The const keyword declares a constant variable that cannot be reassigned after initialization.",
             order: 2,
-            points: 10,
+            points: 15,
+          },
+          {
+            question:
+              "What is the output of console.log(typeof null) in JavaScript?",
+            options: ["null", "undefined", "object", "boolean"],
+            correctAnswer: 2,
+            explanation:
+              "In JavaScript, typeof null returns 'object'. This is a well-known quirk/bug that's kept for backward compatibility.",
+            order: 3,
+            points: 20,
+          },
+          {
+            question: "Which of these is NOT a JavaScript data type?",
+            options: ["string", "boolean", "float", "undefined"],
+            correctAnswer: 2,
+            explanation:
+              "JavaScript doesn't have a 'float' data type. Numbers in JavaScript are all of type 'number'.",
+            order: 4,
+            points: 15,
           },
         ],
       },
     },
   });
 
-  console.log("✅ Created quiz with questions");
+  await prisma.quiz.create({
+    data: {
+      title: "JavaScript Advanced Concepts",
+      description:
+        "Advanced JavaScript topics including closures, promises, and async/await",
+      difficulty: "ADVANCED",
+      categoryId: programmingCategory!.id,
+      timeLimit: 25,
+      xpReward: 200,
+      isPublished: true,
+      questions: {
+        create: [
+          {
+            question: "What is a closure in JavaScript?",
+            options: [
+              "A way to close a function",
+              "A function with access to variables in its outer scope",
+              "A method to stop execution",
+              "A type of loop",
+            ],
+            correctAnswer: 1,
+            explanation:
+              "A closure is a function that has access to variables in its outer (enclosing) scope even after the outer function has returned.",
+            order: 1,
+            points: 25,
+          },
+          {
+            question: "What does async/await do?",
+            options: [
+              "Creates synchronous code",
+              "Makes code run faster",
+              "Provides a cleaner way to handle promises",
+              "Prevents errors",
+            ],
+            correctAnswer: 2,
+            explanation:
+              "async/await provides a more readable and cleaner syntax for handling asynchronous operations with promises.",
+            order: 2,
+            points: 25,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.quiz.create({
+    data: {
+      title: "CSS Layout Fundamentals",
+      description:
+        "Test your understanding of CSS layout techniques and properties",
+      difficulty: "INTERMEDIATE",
+      categoryId: webDevCategory!.id,
+      timeLimit: 12,
+      xpReward: 100,
+      isPublished: true,
+      questions: {
+        create: [
+          {
+            question: "Which CSS property is used to change the text color?",
+            options: ["color", "text-color", "font-color", "text-style"],
+            correctAnswer: 0,
+            explanation:
+              "The 'color' property is used to set the color of text content in CSS.",
+            order: 1,
+            points: 10,
+          },
+          {
+            question: "What does 'display: flex' create?",
+            options: [
+              "A block element",
+              "A flex container",
+              "An inline element",
+              "A grid container",
+            ],
+            correctAnswer: 1,
+            explanation:
+              "display: flex creates a flex container, enabling flexbox layout for its children.",
+            order: 2,
+            points: 15,
+          },
+          {
+            question: "Which property controls the space between flex items?",
+            options: ["margin", "padding", "gap", "spacing"],
+            correctAnswer: 2,
+            explanation:
+              "The 'gap' property controls the space between flex items in a flex container.",
+            order: 3,
+            points: 15,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.quiz.create({
+    data: {
+      title: "React Hooks Deep Dive",
+      description: "Master React hooks and their use cases",
+      difficulty: "INTERMEDIATE",
+      categoryId: webDevCategory!.id,
+      timeLimit: 20,
+      xpReward: 150,
+      isPublished: true,
+      questions: {
+        create: [
+          {
+            question: "Which hook is used for managing component state?",
+            options: ["useEffect", "useState", "useContext", "useMemo"],
+            correctAnswer: 1,
+            explanation:
+              "useState is the primary hook for managing local component state in functional components.",
+            order: 1,
+            points: 15,
+          },
+          {
+            question: "When does useEffect run by default?",
+            options: [
+              "Only on mount",
+              "Only on unmount",
+              "After every render",
+              "Only when state changes",
+            ],
+            correctAnswer: 2,
+            explanation:
+              "By default, useEffect runs after every completed render, including the first render.",
+            order: 2,
+            points: 20,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.quiz.create({
+    data: {
+      title: "Python Data Structures",
+      description:
+        "Explore Python's built-in data structures and their methods",
+      difficulty: "BEGINNER",
+      categoryId: programmingCategory!.id,
+      timeLimit: 18,
+      xpReward: 110,
+      isPublished: true,
+      questions: {
+        create: [
+          {
+            question: "Which data structure is ordered and mutable in Python?",
+            options: ["tuple", "list", "set", "dictionary"],
+            correctAnswer: 1,
+            explanation:
+              "Lists in Python are ordered collections that are mutable (can be changed after creation).",
+            order: 1,
+            points: 10,
+          },
+          {
+            question: "How do you access the last element of a list?",
+            options: ["list[last]", "list[-1]", "list[end]", "list.last()"],
+            correctAnswer: 1,
+            explanation:
+              "In Python, you can use negative indexing where -1 refers to the last element.",
+            order: 2,
+            points: 15,
+          },
+        ],
+      },
+    },
+  });
+
+  console.log("✅ Created quizzes with questions");
 
   console.log("🎉 Database seeded successfully!");
 }

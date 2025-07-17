@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import AdvancedCodeEditor from "../AdvancedCodeEditor";
+import CodeEditor from "../CodeEditor";
 
 // Custom hook to add dropdown styles
 const useDropdownStyles = () => {
@@ -915,7 +915,7 @@ if __name__ == "__main__":
       </div>
 
       {/* Code Editor - Full Width */}
-      <AdvancedCodeEditor
+      <CodeEditor
         code={userCode}
         onChange={setUserCode}
         language={getCurrentLanguage()}

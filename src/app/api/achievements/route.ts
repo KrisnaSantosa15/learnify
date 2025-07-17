@@ -10,28 +10,26 @@ export async function GET(request: NextRequest) {
     const achievements = await prisma.achievement.findMany({
       include: userId
         ? {
-            userAchievements: {
-              where: { userId: parseInt(userId) },
+            users: {
+              where: { userId: userId },
             },
           }
-        : false,
+        : undefined,
       orderBy: {
         createdAt: "desc",
       },
     });
 
     // Add isUnlocked property for each achievement
-    const achievementsWithStatus = achievements.map((achievement) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const achievementsWithStatus = achievements.map((achievement: any) => ({
       ...achievement,
       isUnlocked: userId
-        ? achievement.userAchievements &&
-          achievement.userAchievements.length > 0
+        ? achievement.users && achievement.users.length > 0
         : false,
       unlockedAt:
-        userId &&
-        achievement.userAchievements &&
-        achievement.userAchievements.length > 0
-          ? achievement.userAchievements[0].unlockedAt
+        userId && achievement.users && achievement.users.length > 0
+          ? achievement.users[0].unlockedAt
           : null,
     }));
 
@@ -61,8 +59,8 @@ export async function POST(request: NextRequest) {
     const existingUserAchievement = await prisma.userAchievement.findUnique({
       where: {
         userId_achievementId: {
-          userId: parseInt(userId),
-          achievementId: parseInt(achievementId),
+          userId: userId,
+          achievementId: achievementId,
         },
       },
     });
@@ -76,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Get achievement details
     const achievement = await prisma.achievement.findUnique({
-      where: { id: parseInt(achievementId) },
+      where: { id: achievementId },
     });
 
     if (!achievement) {
@@ -89,8 +87,8 @@ export async function POST(request: NextRequest) {
     // Unlock the achievement
     const userAchievement = await prisma.userAchievement.create({
       data: {
-        userId: parseInt(userId),
-        achievementId: parseInt(achievementId),
+        userId: userId,
+        achievementId: achievementId,
         unlockedAt: new Date(),
       },
       include: {
@@ -100,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Award XP to user
     await prisma.user.update({
-      where: { id: parseInt(userId) },
+      where: { id: userId },
       data: {
         xp: {
           increment: achievement.xpReward,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "next-auth/react";
 
 interface QuizQuestion {
   id: number;
@@ -20,7 +20,10 @@ interface DatabaseQuiz {
   title: string;
   description?: string;
   difficulty: string;
-  category: string;
+  category: {
+    id: string;
+    name: string;
+  };
   questions: DatabaseQuizQuestion[];
   timeLimit?: number;
   xpReward: number;
@@ -147,7 +150,7 @@ const fallbackQuizzes: QuizQuestion[] = [
 ];
 
 export default function QuizSection() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [currentQuiz, setCurrentQuiz] = useState(0);
@@ -189,9 +192,11 @@ export default function QuizSection() {
           throw new Error("Failed to fetch quizzes");
         }
         const data = await response.json();
+        console.log("API Response:", data);
 
-        // Handle API response format
-        const quizzesData = data.quizzes || [];
+        // Handle API response format - API now returns quizzes array directly
+        const quizzesData = Array.isArray(data) ? data : data.quizzes || [];
+        console.log("Processed quizzes data:", quizzesData);
 
         // If no quizzes in database, use fallback
         if (quizzesData.length === 0) {
@@ -216,7 +221,7 @@ export default function QuizSection() {
                 question: question.question,
                 options: question.options,
                 correctAnswer: question.correctAnswer,
-                category: quiz.category,
+                category: quiz.category.name,
                 difficulty: quiz.difficulty as "Easy" | "Medium" | "Hard",
                 xpReward: question.points || 10,
                 explanation: question.explanation,
@@ -334,7 +339,7 @@ export default function QuizSection() {
   };
 
   const handleSubmit = async () => {
-    if (selectedOption !== null && !isSubmitted && user) {
+    if (selectedOption !== null && !isSubmitted && session?.user) {
       setIsSubmitted(true);
       const isCorrect = selectedOption === currentQuestion.correctAnswer;
 
@@ -357,30 +362,30 @@ export default function QuizSection() {
         }
       }
 
-      // Submit quiz attempt to database
-      try {
-        const response = await fetch("/api/quiz-attempts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            quizId: currentQuestion.id,
-            selectedAnswer: selectedOption,
-            isCorrect,
-            xpEarned: isCorrect
-              ? currentQuestion.xpReward + Math.min(correctStreak, 5) * 2
-              : 0,
-          }),
-        });
+      // TODO: Submit quiz attempt to database with NextAuth
+      // try {
+      //   const response = await fetch("/api/quiz-attempts", {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify({
+      //       userId: session?.user?.id,
+      //       quizId: currentQuestion.id,
+      //       selectedAnswer: selectedOption,
+      //       isCorrect,
+      //       xpEarned: isCorrect
+      //         ? currentQuestion.xpReward + Math.min(correctStreak, 5) * 2
+      //         : 0,
+      //     }),
+      //   });
 
-        if (!response.ok) {
-          console.error("Failed to submit quiz attempt");
-        }
-      } catch (error) {
-        console.error("Error submitting quiz attempt:", error);
-      }
+      //   if (!response.ok) {
+      //     console.error("Failed to submit quiz attempt");
+      //   }
+      // } catch (error) {
+      //   console.error("Error submitting quiz attempt:", error);
+      // }
     }
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "next-auth/react";
 
 interface Course {
   id: number;
@@ -21,21 +21,22 @@ interface Course {
 }
 
 export default function CourseProgress() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [dailyGoal] = useState(60); // in minutes
   const [dailyProgress] = useState(45); // in minutes
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setLoading] = useState(true); // Prefix with _ to indicate intentionally unused
+  const [, setError] = useState<string | null>(null); // Prefix with _ to indicate intentionally unused
 
   // Load user's enrolled courses
   useEffect(() => {
     const fetchCourses = async () => {
-      if (!user?.id) return;
+      if (!session?.user) return;
 
       try {
         setLoading(true);
-        const response = await fetch(`/api/courses?userId=${user.id}`);
+        // TODO: Update API to work with NextAuth
+        const response = await fetch(`/api/courses`);
         if (!response.ok) {
           throw new Error("Failed to fetch courses");
         }
@@ -53,7 +54,7 @@ export default function CourseProgress() {
     };
 
     fetchCourses();
-  }, [user]);
+  }, [session?.user]);
 
   // Mock data for courses in progress (fallback)
   const fallbackCourses = [
