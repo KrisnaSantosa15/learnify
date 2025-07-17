@@ -14,11 +14,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already enrolled
-    const existingEnrollment = await prisma.enrollment.findUnique({
+    const existingEnrollment = await prisma.courseProgress.findUnique({
       where: {
         userId_courseId: {
-          userId: parseInt(userId),
-          courseId: parseInt(courseId),
+          userId: userId,
+          courseId: courseId,
         },
       },
     });
@@ -30,12 +30,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create enrollment
-    const enrollment = await prisma.enrollment.create({
+    // Create enrollment (course progress record)
+    const enrollment = await prisma.courseProgress.create({
       data: {
-        userId: parseInt(userId),
-        courseId: parseInt(courseId),
-        enrolledAt: new Date(),
+        userId: userId,
+        courseId: courseId,
+        progress: 0.0,
+        timeSpent: 0,
+        isCompleted: false,
       },
       include: {
         course: {
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
             id: true,
             title: true,
             description: true,
-            category: true,
+            technology: true,
             difficulty: true,
           },
         },
@@ -73,29 +75,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const enrollments = await prisma.enrollment.findMany({
+    const enrollments = await prisma.courseProgress.findMany({
       where: {
-        userId: parseInt(userId),
+        userId: userId,
       },
       include: {
         course: {
           include: {
             modules: {
               include: {
-                lessons: {
-                  include: {
-                    progress: {
-                      where: { userId: parseInt(userId) },
-                    },
-                  },
-                },
+                lessons: true,
               },
             },
           },
         },
       },
       orderBy: {
-        enrolledAt: "desc",
+        createdAt: "desc",
       },
     });
 
@@ -107,34 +103,16 @@ export async function GET(request: NextRequest) {
         0
       );
 
-      const completedLessons = enrollment.course.modules.reduce(
-        (
-          total: number,
-          module: { lessons: { progress: { isCompleted: boolean }[] }[] }
-        ) => {
-          return (
-            total +
-            module.lessons.filter(
-              (lesson: { progress: { isCompleted: boolean }[] }) =>
-                lesson.progress &&
-                lesson.progress.length > 0 &&
-                lesson.progress[0].isCompleted
-            ).length
-          );
-        },
-        0
-      );
-
-      const progressPercentage =
-        totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
-          : 0;
+      // Use the existing progress percentage from the CourseProgress model
+      const progressPercentage = Math.round(enrollment.progress);
 
       return {
         ...enrollment,
         progressPercentage,
         totalLessons,
-        completedLessons,
+        completedLessons: Math.round(
+          (totalLessons * enrollment.progress) / 100
+        ),
       };
     });
 

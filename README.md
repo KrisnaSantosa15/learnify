@@ -5,10 +5,21 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![Tailwind](https://img.shields.io/badge/Tailwind-4-blue?style=for-the-badge&logo=tailwindcss)
 
+![Landing Page](https://raw.githubusercontent.com/KrisnaSantosa15/learnify/main/docs/images/landing-page.png)
+
 A modern, interactive, and futuristic educational platform that transforms
 learning into an engaging gaming experience. Lernify combines cutting-edge web
 technologies with gamification mechanics to create an immersive learning
 environment inspired by platforms like Duolingo.
+
+Website: [Lernify Code](https://learnify-code.vercel.app/)
+User Credentials:
+- Email: `demo@learnifycode.com`
+- Password: `password123`
+
+Admin Credentials:
+- Email: `admin@learnify.com`
+- Password: `admin123`
 
 ## 🌟 Features
 

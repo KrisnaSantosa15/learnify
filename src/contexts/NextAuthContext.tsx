@@ -60,9 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch full user data when session is available
   useEffect(() => {
     const fetchUserData = async () => {
-      if (session?.user?.id) {
+      const sessionUser = session?.user as
+        | { id?: string; email?: string; name?: string }
+        | undefined;
+      if (sessionUser?.id) {
         try {
-          const response = await fetch(`/api/users/${session.user.id}`);
+          const response = await fetch(`/api/users/${sessionUser.id}`);
           if (response.ok) {
             const { user: userData } = await response.json();
             setUser(userData);
@@ -75,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    if (status === "authenticated" && session?.user?.id) {
+    if (status === "authenticated" && (session?.user as { id?: string })?.id) {
       fetchUserData();
     } else if (status === "unauthenticated") {
       setUser(null);

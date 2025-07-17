@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get("userId");
     const category = searchParams.get("category");
 
-    const whereClause: { isPublished: boolean; category?: string } = {
+    const whereClause: { isPublished: boolean; technology?: string } = {
       isPublished: true,
     };
 
     if (category && category !== "all") {
-      whereClause.category = category;
+      whereClause.technology = category;
     }
 
     const courses = await prisma.course.findMany({
@@ -21,20 +21,12 @@ export async function GET(request: NextRequest) {
       include: {
         modules: {
           include: {
-            lessons: {
-              include: userId
-                ? {
-                    progress: {
-                      where: { userId: parseInt(userId) },
-                    },
-                  }
-                : false,
-            },
+            lessons: true,
           },
         },
-        enrollments: userId
+        progress: userId
           ? {
-              where: { userId: parseInt(userId) },
+              where: { userId: userId },
             }
           : false,
       },
@@ -47,11 +39,9 @@ export async function GET(request: NextRequest) {
     const coursesWithProgress = courses.map((course: unknown) => {
       const courseData = course as {
         modules: Array<{
-          lessons: Array<{
-            progress: Array<{ isCompleted: boolean }>;
-          }>;
+          lessons: Array<{ id: string }>;
         }>;
-        enrollments?: Array<unknown>;
+        progress: Array<{ progress: number; isCompleted: boolean }>;
         [key: string]: unknown;
       };
 
@@ -61,32 +51,23 @@ export async function GET(request: NextRequest) {
         (total: number, module) => total + module.lessons.length,
         0
       );
-      const completedLessons = courseData.modules.reduce(
-        (total: number, module) => {
-          return (
-            total +
-            module.lessons.filter(
-              (lesson) =>
-                lesson.progress &&
-                lesson.progress.length > 0 &&
-                lesson.progress[0].isCompleted
-            ).length
-          );
-        },
-        0
-      );
 
-      const progressPercentage =
-        totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
-          : 0;
+      // Get progress from the CourseProgress model
+      const courseProgress =
+        courseData.progress.length > 0 ? courseData.progress[0] : null;
+      const progressPercentage = courseProgress
+        ? Math.round(courseProgress.progress)
+        : 0;
+      const completedLessons = courseProgress
+        ? Math.round((totalLessons * courseProgress.progress) / 100)
+        : 0;
 
       return {
         ...courseData,
         progressPercentage,
         totalLessons,
         completedLessons,
-        isEnrolled: courseData.enrollments && courseData.enrollments.length > 0,
+        isEnrolled: courseData.progress && courseData.progress.length > 0,
       };
     });
 
@@ -103,17 +84,8 @@ export async function GET(request: NextRequest) {
 // POST /api/courses - Create a new course (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const {
-      title,
-      description,
-      category,
-      difficulty,
-      duration,
-      price,
-      imageUrl,
-      tags,
-      modules,
-    } = await request.json();
+    const { title, description, category, difficulty, imageUrl, modules } =
+      await request.json();
 
     if (!title || !description || !category) {
       return NextResponse.json(
@@ -126,15 +98,11 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         description,
-        category,
+        technology: category, // Using technology field instead of category
         difficulty: difficulty || "BEGINNER",
-        duration: duration || 0,
-        price: price || 0,
-        imageUrl,
-        tags: tags || [],
+        thumbnail: imageUrl,
+        order: 0, // Default order
         isPublished: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
     });
 
@@ -145,7 +113,8 @@ export async function POST(request: NextRequest) {
           data: {
             title: moduleData.title,
             description: moduleData.description,
-            orderIndex: moduleData.orderIndex || 0,
+            content: moduleData.content || {},
+            order: moduleData.order || 0,
             courseId: course.id,
           },
         });
