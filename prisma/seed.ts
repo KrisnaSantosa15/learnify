@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import seedAchievements from "../src/lib/seedAchievements";
 
 const prisma = new PrismaClient();
 
@@ -474,6 +475,30 @@ async function main() {
   });
 
   console.log("✅ Created quizzes with questions");
+
+  // Assign some achievements to demo user for testing
+  const demoUser = users[0]; // demo@learnifycode.com
+  await Promise.all([
+    prisma.userAchievement.create({
+      data: {
+        userId: demoUser.id,
+        achievementId: achievements[0].id, // First Steps
+        unlockedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      },
+    }),
+    prisma.userAchievement.create({
+      data: {
+        userId: demoUser.id,
+        achievementId: achievements[1].id, // Code Warrior
+        unlockedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      },
+    }),
+  ]);
+
+  console.log("✅ Created user achievements for demo user");
+
+  // Seed achievements
+  await seedAchievements();
 
   console.log("🎉 Database seeded successfully!");
 }
