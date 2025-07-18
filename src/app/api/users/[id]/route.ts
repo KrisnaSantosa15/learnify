@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 // PUT /api/users/[id] - Update user
 export async function PUT(
@@ -9,7 +10,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { role, name, email } = body;
+    const { role, name, email, username, plan, password } = body;
 
     // Validate the user exists
     const existingUser = await prisma.user.findUnique({
@@ -25,10 +26,21 @@ export async function PUT(
       role?: "USER" | "ADMIN";
       name?: string;
       email?: string;
+      username?: string;
+      plan?: "FREE" | "PRO" | "PREMIUM";
+      password?: string;
     } = {};
     if (role !== undefined) updateData.role = role as "USER" | "ADMIN";
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
+    if (username !== undefined) updateData.username = username;
+    if (plan !== undefined)
+      updateData.plan = plan as "FREE" | "PRO" | "PREMIUM";
+
+    // Hash password if provided
+    if (password !== undefined && password.trim()) {
+      updateData.password = await bcrypt.hash(password, 12);
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id },
@@ -47,9 +59,13 @@ export async function PUT(
       id: updatedUser.id,
       name: updatedUser.name || "",
       email: updatedUser.email,
+      username: updatedUser.username,
       role: updatedUser.role,
-      enrollments: updatedUser._count.progress,
+      plan: updatedUser.plan,
+      level: updatedUser.level,
       xp: updatedUser.xp,
+      streak: updatedUser.streak,
+      enrollments: updatedUser._count.progress,
       lastActive: updatedUser.lastActive.toISOString(),
       createdAt: updatedUser.createdAt.toISOString(),
     };
