@@ -39,7 +39,7 @@ export function RoleBasedDashboard() {
     <div className="space-y-6">
       {/* User Section - Visible to regular users only */}
       <div className="bg-gradient-to-r from-blue-500/10 to-green-500/10 rounded-lg p-6 border border-blue-200/20">
-        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <span className="text-blue-500">📚</span>
           Learning Center
         </h2>

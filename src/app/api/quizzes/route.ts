@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
+    const categoryId = searchParams.get("categoryId");
     const difficulty = searchParams.get("difficulty");
     const admin = searchParams.get("admin"); // Add admin parameter
 
@@ -19,7 +20,10 @@ export async function GET(request: NextRequest) {
       whereClause.isPublished = true;
     }
 
-    if (category && category !== "All") {
+    // Handle both category and categoryId parameters for compatibility
+    if (categoryId && categoryId !== "all") {
+      whereClause.categoryId = categoryId;
+    } else if (category && category !== "All") {
       whereClause.categoryId = category;
     }
 

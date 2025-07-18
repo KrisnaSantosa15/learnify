@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 // POST /api/quiz-attempts - Submit a quiz attempt
 export async function POST(request: NextRequest) {
   try {
-    const { userId, quizId, answers, timeSpent } = await request.json();
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const { quizId, answers, timeSpent } = await request.json();
+    const userId = session.user.id;
 
     // Get the quiz with questions to calculate score
     const quiz = await prisma.quiz.findUnique({
@@ -98,17 +110,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      {
-        attempt: {
-          ...attempt,
-          xpEarned,
-          percentage: Math.round(percentage),
-          results,
-        },
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      score: attempt.score,
+      maxScore: attempt.maxScore,
+      percentage: Math.round(percentage),
+      xpEarned,
+      results,
+      attempt,
+    });
   } catch (error) {
     console.error("Error submitting quiz attempt:", error);
     return NextResponse.json(

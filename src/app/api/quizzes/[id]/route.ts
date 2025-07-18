@@ -10,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const session = await getServerSession(authOptions);
+
+    // Get quiz with all related data
     const quiz = await prisma.quiz.findUnique({
       where: { id },
       include: {
@@ -31,7 +34,88 @@ export async function GET(
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
-    return NextResponse.json(quiz);
+    // Get user attempts if user is logged in
+    let userAttempts: {
+      id: string;
+      score: number;
+      maxScore: number;
+      timeSpent: number;
+      completedAt: Date | null;
+    }[] = [];
+    let canTakeQuiz = true;
+
+    if (session?.user?.id) {
+      userAttempts = await prisma.quizAttempt.findMany({
+        where: {
+          quizId: id,
+          userId: session.user.id,
+        },
+        orderBy: {
+          completedAt: "desc",
+        },
+        select: {
+          id: true,
+          score: true,
+          maxScore: true,
+          timeSpent: true,
+          completedAt: true,
+        },
+      });
+
+      // Check if retakes are allowed
+      if (!quiz.allowRetakes && userAttempts.length > 0) {
+        canTakeQuiz = false;
+      }
+    }
+
+    // Format quiz data for the component
+    const formattedQuiz = {
+      id: quiz.id,
+      title: quiz.title,
+      description: quiz.description,
+      difficulty: quiz.difficulty,
+      category: {
+        id: quiz.category.id,
+        name: quiz.category.name,
+        icon: quiz.category.icon,
+        color: quiz.category.color,
+      },
+      timeLimit: quiz.timeLimit,
+      xpReward: quiz.xpReward,
+      questions: quiz.questions.map((q) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        order: q.order,
+        points: q.points,
+      })),
+      settings: {
+        randomizeQuestions: quiz.randomizeQuestions,
+        showProgress: quiz.showProgress,
+        allowRetakes: quiz.allowRetakes,
+        showExplanations: quiz.showExplanations,
+        instantFeedback: quiz.instantFeedback,
+        certificateEligible: quiz.certificateEligible || false,
+      },
+      stats: {
+        totalAttempts: quiz._count.attempts,
+        questionCount: quiz.questions.length,
+        maxScore: quiz.questions.reduce((sum, q) => sum + q.points, 0),
+      },
+    };
+
+    return NextResponse.json({
+      quiz: formattedQuiz,
+      userAttempts: userAttempts.map((attempt) => ({
+        ...attempt,
+        percentage: Math.round((attempt.score / attempt.maxScore) * 100),
+        completedAt:
+          attempt.completedAt?.toISOString() || new Date().toISOString(),
+      })),
+      canTakeQuiz,
+    });
   } catch (error) {
     console.error("Error fetching quiz:", error);
     return NextResponse.json(
