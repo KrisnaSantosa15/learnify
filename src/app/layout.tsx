@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import BackToTop from "@/components/ui/BackToTop";
+import NotificationSystem from "@/components/ui/NotificationSystem";
 import { NextAuthProvider } from "@/components/providers/NextAuthProvider";
+import { ReduxProvider } from "@/components/providers/ReduxProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +32,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-dark-100 text-white`}
       >
-        <NextAuthProvider>
-          {children}
-          <BackToTop />
-        </NextAuthProvider>
+        <ReduxProvider>
+          <NextAuthProvider>
+            {children}
+            <BackToTop />
+            <NotificationSystem />
+          </NextAuthProvider>
+        </ReduxProvider>
       </body>
     </html>
   );
